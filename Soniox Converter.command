@@ -12,7 +12,6 @@ cd "$SCRIPT_DIR"
 if [ ! -d ".venv" ]; then
     if [ -f "$SCRIPT_DIR/Install Soniox Converter.command" ]; then
         bash "$SCRIPT_DIR/Install Soniox Converter.command"
-        # If install failed or user cancelled, exit
         [ ! -d ".venv" ] && exit 1
     else
         osascript -e 'display dialog "Soniox Converter is not set up yet.\n\nPlease run the installer first." with title "Soniox Converter" buttons {"OK"} default button "OK" with icon caution' 2>/dev/null
@@ -34,6 +33,21 @@ if [ ! -f ".env" ] || ! grep -q "SONIOX_API_KEY" .env 2>/dev/null; then
     fi
 fi
 
-# ── Load env and launch ──────────────────────────────────────────
+# ── Load env ──────────────────────────────────────────────────────
 export $(grep -v '^#' .env | xargs)
-.venv/bin/python3 -m soniox_converter.gui
+
+# ── Launch GUI via Python.app framework bundle ────────────────────
+# Tkinter on macOS crashes (SIGABRT in TkpInit) if the Python process
+# doesn't have proper GUI/foreground app status. The system Python.app
+# bundle has the correct Info.plist for macOS to treat it as a GUI app.
+# We set PYTHONPATH so it finds both the project code and venv packages.
+VENV_SITE="$SCRIPT_DIR/.venv/lib/python3.9/site-packages"
+FRAMEWORK_PYTHON="/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python"
+
+if [ -f "$FRAMEWORK_PYTHON" ]; then
+    export PYTHONPATH="$SCRIPT_DIR:$VENV_SITE${PYTHONPATH:+:$PYTHONPATH}"
+    exec "$FRAMEWORK_PYTHON" -m soniox_converter.gui
+else
+    # Fallback for non-CommandLineTools Python installs
+    exec .venv/bin/python3 -m soniox_converter.gui
+fi
