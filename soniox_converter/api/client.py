@@ -269,6 +269,16 @@ class SonioxClient:
         if context:
             _validate_context_size(context)
             body["context"] = context
+            if on_status:
+                parts = []
+                if "text" in context:
+                    parts.append("script={} chars".format(len(context["text"])))
+                if "terms" in context:
+                    parts.append("{} terms".format(len(context["terms"])))
+                on_status("  Sending context to Soniox: {}".format(", ".join(parts)))
+        else:
+            if on_status:
+                on_status("  No context sent to Soniox.")
 
         resp = await client.post("/transcriptions", json=body)
 

@@ -992,10 +992,14 @@ class TranscriberApp:
 
         if script_path:
             script_text = load_script(script_path)
-            on_status("  Script: {} (explicit)".format(script_path.name))
+            on_status("  Script: {} (explicit, {} chars)".format(
+                script_path.name, len(script_text)))
         elif companion.script_path:
             script_text = load_script(companion.script_path)
-            on_status("  Script: {} (auto-discovered)".format(companion.script_path.name))
+            on_status("  Script: {} (auto-discovered, {} chars)".format(
+                companion.script_path.name, len(script_text)))
+        else:
+            on_status("  Script: (none found)")
 
         if terms_path:
             all_terms.extend(load_terms(terms_path))
