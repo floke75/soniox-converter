@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "soniox-converter"
+version = "0.1.0"
+description = "Soniox ASR transcript converter — produces Premiere Pro JSON, SRT captions, kinetic word reveal, and plain text from Soniox async API output."
+requires-python = ">=3.9"
+dependencies = [
+    "httpx>=0.24",
+    "python-dotenv>=0.19",
+    "jsonschema>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
