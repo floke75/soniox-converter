@@ -29,7 +29,7 @@ from soniox_converter.core.ir import AssembledWord, SpeakerInfo, Transcript
 from soniox_converter.formatters.base import BaseFormatter, FormatterOutput
 
 # Punctuation characters that merge onto the preceding word with no space.
-_MERGE_PUNCTUATION = frozenset({".", ",", "?", "!", ";", ":", "\u2026", "\u2014"})
+_MERGE_PUNCTUATION = frozenset({".", ",", "?", "!", ";", ":", "\u2026", "\u2014", "\u2013", "-"})
 
 
 def _build_speaker_name_map(speakers: List[SpeakerInfo]) -> Dict[Optional[str], str]:
