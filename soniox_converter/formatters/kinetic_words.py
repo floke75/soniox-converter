@@ -1,17 +1,19 @@
-"""Kinetic Word Reveal formatter — three-file Premiere Pro JSON for social video.
+"""Kinetic Word Reveal formatter — three-file SRT for social video.
 
 WHY: Social media video (TikTok, Reels, Shorts) uses animated word-by-word
 captions where words pop onto screen one at a time, grouped into "buckets"
 of up to 3 words. Each bucket occupies three visual rows (top, middle,
-bottom). Premiere Pro handles positioning; this formatter handles timing.
+bottom). Adobe Premiere Pro's kinetic word reveal feature reformats JSON
+transcripts, destroying our row layout. SRT files preserve the layout
+because each subtitle block's text is displayed as-is.
 
 HOW: Words are merged with trailing punctuation, split into sentences via
 EOS markers, then each sentence is divided into buckets of ``max_bucket_size``
 words (default 3). Each word in a bucket is assigned to a row (1, 2, 3) by
-position. Three separate Premiere Pro JSON files are produced — one per row —
-where each file contains only the words that appear on that row. Timing is
-calculated so all words in a bucket disappear together when the next bucket
-starts.
+position. Three separate SRT files are produced — one per row — where each
+file contains only the words that appear on that row. Line breaks position
+the word vertically: row 1 has no leading newlines, row 2 has one leading
+newline, row 3 has two leading newlines.
 
 RULES:
 - Single speaker only — ignores diarization, treats entire transcript as one
@@ -19,40 +21,24 @@ RULES:
 - Buckets are groups of ``max_bucket_size`` words; last bucket gets remainder
 - Words appear at their spoken ``start_s``; all words in a bucket share an
   end time (the next bucket's first word ``start_s``, capped by ``max_hold_s``)
-- Three output files with suffixes: -kinetic-row1.json, -kinetic-row2.json,
-  -kinetic-row3.json
-- Each file is a valid Premiere Pro transcript JSON (schema-validated)
-- ``word.type`` is always ``"word"`` (no standalone punctuation)
-- ``word.eos`` is True on the last word of each sentence
+- Three output files with suffixes: -kinetic-row1.srt, -kinetic-row2.srt,
+  -kinetic-row3.srt
+- Each file is a valid SRT subtitle file
 - Configurable: max_bucket_size, max_hold_s, final_hold_s, min_word_display_s
 """
 
 from __future__ import annotations
 
-import json
-import uuid
+import re
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, List, Optional
+from typing import List
 
-import jsonschema
-
-from soniox_converter.config import UNKNOWN_LANGUAGE_CODE, map_language
 from soniox_converter.core.ir import AssembledWord, Transcript
 from soniox_converter.formatters.base import BaseFormatter, FormatterOutput
 
-_SCHEMA_PATH = Path(__file__).resolve().parent.parent.parent / "PremierePro_transcript_format_spec.json"
-
-_CACHED_SCHEMA: Optional[dict] = None
-
-
-def _get_schema() -> dict:
-    """Load and cache the Premiere Pro JSON schema."""
-    global _CACHED_SCHEMA
-    if _CACHED_SCHEMA is None:
-        with open(_SCHEMA_PATH) as f:
-            _CACHED_SCHEMA = json.load(f)
-    return _CACHED_SCHEMA
+# Matches tokens that look like part of a number: digits, decimal separators,
+# digit groups with spaces (e.g. "120", "000", "2,", "25-"), and lone separators.
+_NUMBER_PART_RE = re.compile(r"^[\d.,\-]+$")
 
 
 @dataclass
@@ -110,6 +96,87 @@ def _merge_punctuation(words: List[AssembledWord]) -> List[_MergedWord]:
                 eos=w.eos,
             ))
     return merged
+
+
+def _is_number_part(text: str) -> bool:
+    """Check if a token looks like part of a multi-token number.
+
+    Matches: "2,", "5", "120", "000", "25-", "30"
+    Does not match: regular words like "miljoner", "kronor"
+    """
+    return bool(_NUMBER_PART_RE.match(text))
+
+
+def _group_numbers(words: List[_MergedWord]) -> List[_MergedWord]:
+    """Group multi-token numbers into single merged words.
+
+    WHY: Soniox tokenises numbers like "2,5" as ["2,", "5"], "120 000" as
+    ["120", "000"], and "25-30" as ["25-", "30"]. In kinetic captions these
+    must stay together so "2,5 miljoner" appears as one visual group, not
+    split across rows.
+
+    HOW: When a number-like token is followed by another number-like token,
+    merge them (with a space if needed). Continue merging as long as the
+    next token is also numeric. Then also absorb the following non-numeric
+    word (e.g. "miljoner", "kronor") into the same merged word so the
+    number and its unit stay together in the same bucket slot.
+    """
+    if not words:
+        return words
+
+    result: List[_MergedWord] = []
+    i = 0
+    while i < len(words):
+        word = words[i]
+
+        # Check if this starts a number sequence
+        if _is_number_part(word.text):
+            # Accumulate consecutive number parts
+            group_text = word.text
+            group_start = word.start_s
+            group_end = word.start_s + word.duration_s
+            group_confidence = word.confidence
+            group_eos = word.eos
+            j = i + 1
+
+            while j < len(words) and _is_number_part(words[j].text):
+                next_w = words[j]
+                # Join with space unless previous ends with comma/dash
+                # (e.g. "2," + "5" → "2,5" but "120" + "000" → "120 000")
+                if group_text.endswith((",", "-")):
+                    group_text += next_w.text
+                else:
+                    group_text += " " + next_w.text
+                group_end = next_w.start_s + next_w.duration_s
+                group_confidence = min(group_confidence, next_w.confidence)
+                if next_w.eos:
+                    group_eos = True
+                j += 1
+
+            # If we merged multiple number tokens, also absorb the next
+            # non-numeric word as the unit (e.g. "miljoner", "kronor")
+            if j > i + 1 and j < len(words) and not _is_number_part(words[j].text):
+                unit = words[j]
+                group_text += " " + unit.text
+                group_end = unit.start_s + unit.duration_s
+                group_confidence = min(group_confidence, unit.confidence)
+                if unit.eos:
+                    group_eos = True
+                j += 1
+
+            result.append(_MergedWord(
+                text=group_text,
+                start_s=group_start,
+                duration_s=group_end - group_start,
+                confidence=group_confidence,
+                eos=group_eos,
+            ))
+            i = j
+        else:
+            result.append(word)
+            i += 1
+
+    return result
 
 
 def _split_sentences(words: List[_MergedWord]) -> List[List[_MergedWord]]:
@@ -179,71 +246,89 @@ def _compute_bucket_end_times(
             bucket.end_s = min_end
 
 
-def _build_row_outputs(
+def _format_srt_timestamp(seconds: float) -> str:
+    """Format seconds as SRT timestamp: HH:MM:SS,mmm"""
+    if seconds < 0:
+        seconds = 0.0
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millis = int(round((seconds - int(seconds)) * 1000))
+    return "{:02d}:{:02d}:{:02d},{:03d}".format(hours, minutes, secs, millis)
+
+
+def _build_srt_rows(
     all_buckets: List[_Bucket],
-    speaker_uuid: str,
-    language: str,
     max_bucket_size: int,
-) -> List[List[dict]]:
-    """Build per-row segment lists from bucketed words.
+) -> List[str]:
+    """Build per-row SRT content strings from bucketed words.
 
     Each bucket assigns words to rows by position: word 0 → row 1,
-    word 1 → row 2, word 2 → row 3. Each row gets a separate list
-    of Premiere Pro segments. A segment contains exactly one word.
+    word 1 → row 2, word 2 → row 3. Each row gets a separate SRT file.
 
-    Returns a list of ``max_bucket_size`` row lists, each containing
-    segment dicts ready for the Premiere Pro JSON structure.
+    Line breaks position the word vertically within the subtitle block:
+    - Row 1: word text (no leading newlines)
+    - Row 2: one leading newline + word text
+    - Row 3: two leading newlines + word text
+
+    Returns a list of ``max_bucket_size`` SRT content strings.
     """
-    rows: List[List[dict]] = [[] for _ in range(max_bucket_size)]
+    # Collect subtitle entries per row: list of (start_s, end_s, text)
+    row_entries: List[List[tuple]] = [[] for _ in range(max_bucket_size)]
 
     for bucket in all_buckets:
         bucket_end = bucket.end_s
         for row_idx, word in enumerate(bucket.words):
-            word_duration = bucket_end - word.start_s
-            if word_duration < 0:
-                word_duration = 0.0
+            # Add leading newlines to position the word on its row
+            prefix = "\n" * row_idx
+            text = prefix + word.text
+            row_entries[row_idx].append((word.start_s, bucket_end, text))
 
-            word_dict: dict[str, Any] = {
-                "text": word.text,
-                "start": word.start_s,
-                "duration": word_duration,
-                "confidence": word.confidence,
-                "type": "word",
-                "eos": word.eos,
-                "tags": [],
-            }
+    # Build SRT strings, clamping end times to avoid overlaps within a row
+    srt_contents: List[str] = []
+    for row_idx in range(max_bucket_size):
+        entries = row_entries[row_idx]
+        if not entries:
+            srt_contents.append("")
+            continue
 
-            segment: dict[str, Any] = {
-                "start": word.start_s,
-                "duration": word_duration,
-                "speaker": speaker_uuid,
-                "language": language,
-                "words": [word_dict],
-            }
+        lines: List[str] = []
+        for seq_num, (start_s, end_s, text) in enumerate(entries, 1):
+            # Clamp end_s so it doesn't overlap the next entry on this row
+            if seq_num < len(entries):
+                next_start = entries[seq_num][0]  # seq_num is 1-based, so index = seq_num
+                if end_s > next_start:
+                    end_s = next_start
+            lines.append(str(seq_num))
+            lines.append("{} --> {}".format(
+                _format_srt_timestamp(start_s),
+                _format_srt_timestamp(end_s),
+            ))
+            lines.append(text)
+            lines.append("")  # blank line separator
 
-            rows[row_idx].append(segment)
+        srt_contents.append("\n".join(lines))
 
-    return rows
+    return srt_contents
 
 
 class KineticWordsFormatter(BaseFormatter):
-    """Formatter producing three Premiere Pro JSON files for kinetic word reveal.
+    """Formatter producing three SRT files for kinetic word reveal.
 
     WHY: Social media video captions need words that pop onto screen one
-    at a time in a 3-row stack. This formatter handles the timing math
-    and produces three separate track files the editor imports into
-    Premiere Pro.
+    at a time in a 3-row stack. Adobe Premiere Pro reformats JSON transcript
+    text, destroying our row layout. SRT subtitle files preserve the text
+    as-is, so line breaks for vertical positioning are maintained.
 
     HOW: Merges punctuation, splits into sentences, buckets words into
     groups of 3, computes appear/disappear timing, then distributes
-    words across three row files. Each file is a valid Premiere Pro
-    transcript JSON.
+    words across three row files with line-break positioning.
 
     RULES:
     - Single speaker (ignores diarization)
     - Punctuation merged onto preceding word before bucketing
-    - Three output files: -kinetic-row1.json, -kinetic-row2.json, -kinetic-row3.json
-    - Each file validated against the Premiere Pro schema
+    - Three output files: -kinetic-row1.srt, -kinetic-row2.srt, -kinetic-row3.srt
+    - Row position encoded via leading newlines (row1: none, row2: 1, row3: 2)
     - Configurable via constructor: max_bucket_size, max_hold_s, final_hold_s,
       min_word_display_s
     """
@@ -265,24 +350,14 @@ class KineticWordsFormatter(BaseFormatter):
         return "Kinetic Word Reveal"
 
     def format(self, transcript: Transcript) -> List[FormatterOutput]:
-        """Convert the Transcript IR into three kinetic word reveal JSON files.
+        """Convert the Transcript IR into three kinetic word reveal SRT files.
 
         Args:
             transcript: The complete IR with segments, speakers, and metadata.
 
         Returns:
             Three FormatterOutput objects, one per row position.
-
-        Raises:
-            jsonschema.ValidationError: If any generated JSON does not
-                conform to the Premiere Pro transcript schema.
         """
-        # Single speaker — create one UUID for the kinetic output
-        speaker_uuid = str(uuid.uuid4())
-        language = map_language(transcript.primary_language)
-        if language is None:
-            language = UNKNOWN_LANGUAGE_CODE
-
         # Flatten all words from all IR segments
         all_words: List[AssembledWord] = []
         for segment in transcript.segments:
@@ -292,8 +367,11 @@ class KineticWordsFormatter(BaseFormatter):
         merged = _merge_punctuation(all_words)
 
         if not merged:
-            # Empty transcript — return three empty but valid JSONs
-            return self._empty_outputs(speaker_uuid, language)
+            # Empty transcript — return three empty SRT files
+            return self._empty_outputs()
+
+        # Step 1b: Group multi-token numbers (e.g. "2," + "5" → "2,5")
+        merged = _group_numbers(merged)
 
         # Step 2: Split into sentences
         sentences = _split_sentences(merged)
@@ -308,96 +386,39 @@ class KineticWordsFormatter(BaseFormatter):
             all_buckets, self.max_hold_s, self.final_hold_s, self.min_word_display_s
         )
 
-        # Step 5: Build per-row segment lists
-        row_segments = _build_row_outputs(
-            all_buckets, speaker_uuid, language, self.max_bucket_size
-        )
+        # Step 5: Build per-row SRT content
+        srt_contents = _build_srt_rows(all_buckets, self.max_bucket_size)
 
-        # Step 6: Build and validate three output files
-        schema = _get_schema()
-        outputs: List[FormatterOutput] = []
+        # Step 6: Package as FormatterOutput
         suffixes = [
-            "-kinetic-row1.json",
-            "-kinetic-row2.json",
-            "-kinetic-row3.json",
+            "-kinetic-row1.srt",
+            "-kinetic-row2.srt",
+            "-kinetic-row3.srt",
         ]
 
+        outputs: List[FormatterOutput] = []
         for row_idx in range(self.max_bucket_size):
-            segments = row_segments[row_idx]
-
-            if not segments:
-                # Row has no words — create a minimal valid JSON
-                # Use a dummy segment so the schema's minItems:1 is satisfied
-                outputs.append(self._minimal_output(
-                    suffixes[row_idx], speaker_uuid, language
-                ))
-                continue
-
-            output_dict: dict[str, Any] = {
-                "language": language,
-                "segments": segments,
-                "speakers": [{"id": speaker_uuid, "name": "Speaker 1"}],
-            }
-
-            jsonschema.validate(instance=output_dict, schema=schema)
-
-            content = json.dumps(output_dict, indent=2, ensure_ascii=False)
+            content = srt_contents[row_idx]
             outputs.append(FormatterOutput(
                 suffix=suffixes[row_idx],
                 content=content,
-                media_type="application/json",
+                media_type="application/x-subrip",
             ))
 
         return outputs
 
-    def _empty_outputs(
-        self, speaker_uuid: str, language: str
-    ) -> List[FormatterOutput]:
-        """Produce three minimal valid JSON files for an empty transcript."""
+    def _empty_outputs(self) -> List[FormatterOutput]:
+        """Produce three empty SRT files for an empty transcript."""
         suffixes = [
-            "-kinetic-row1.json",
-            "-kinetic-row2.json",
-            "-kinetic-row3.json",
+            "-kinetic-row1.srt",
+            "-kinetic-row2.srt",
+            "-kinetic-row3.srt",
         ]
         return [
-            self._minimal_output(s, speaker_uuid, language)
+            FormatterOutput(
+                suffix=s,
+                content="",
+                media_type="application/x-subrip",
+            )
             for s in suffixes
         ]
-
-    def _minimal_output(
-        self, suffix: str, speaker_uuid: str, language: str
-    ) -> FormatterOutput:
-        """Create a minimal valid Premiere Pro JSON for an empty row.
-
-        Uses a zero-duration placeholder segment to satisfy the schema's
-        minItems: 1 requirement on segments and words.
-        """
-        output_dict: dict[str, Any] = {
-            "language": language,
-            "segments": [
-                {
-                    "start": 0.0,
-                    "duration": 0.0,
-                    "speaker": speaker_uuid,
-                    "language": language,
-                    "words": [
-                        {
-                            "text": "",
-                            "start": 0.0,
-                            "duration": 0.0,
-                            "confidence": 1.0,
-                            "type": "word",
-                            "eos": True,
-                            "tags": [],
-                        }
-                    ],
-                }
-            ],
-            "speakers": [{"id": speaker_uuid, "name": "Speaker 1"}],
-        }
-        content = json.dumps(output_dict, indent=2, ensure_ascii=False)
-        return FormatterOutput(
-            suffix=suffix,
-            content=content,
-            media_type="application/json",
-        )

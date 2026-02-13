@@ -29,7 +29,7 @@ from soniox_converter.core.ir import AssembledWord, SpeakerInfo, Transcript
 from soniox_converter.formatters.base import BaseFormatter, FormatterOutput
 
 # Punctuation characters that merge onto the preceding word with no space.
-_MERGE_PUNCTUATION = frozenset({".", ",", "?", "!", ";", ":", "\u2026", "\u2014"})
+_MERGE_PUNCTUATION = frozenset({".", ",", "?", "!", ";", ":", "\u2026", "\u2014", "\u2013", "-"})
 
 
 def _build_speaker_name_map(speakers: List[SpeakerInfo]) -> Dict[Optional[str], str]:
@@ -54,7 +54,8 @@ def _merge_words_to_text(words: List[AssembledWord]) -> str:
     HOW: Walk words left-to-right. If the current token is punctuation
     whose text is in _MERGE_PUNCTUATION, append it directly to the
     accumulator without a space. Otherwise prepend a space (except for
-    the very first word).
+    the very first word). Decimal number continuations (e.g. "2," + "5")
+    are joined without a space.
     """
     if not words:
         return ""
@@ -65,8 +66,14 @@ def _merge_words_to_text(words: List[AssembledWord]) -> str:
             # Merge onto preceding word — no space
             parts.append(word.text)
         elif parts:
-            parts.append(" ")
-            parts.append(word.text)
+            # Suppress space after comma/dash when next token is numeric
+            # (e.g. "2," + "5" → "2,5" not "2, 5")
+            prev = parts[-1]
+            if prev in (",", "-") and word.text.isdigit():
+                parts.append(word.text)
+            else:
+                parts.append(" ")
+                parts.append(word.text)
         else:
             parts.append(word.text)
 

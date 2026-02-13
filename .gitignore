@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 .DS_Store
+.venv/
+.pytest_cache/
 test-assets/*.mp4
 test-assets/*.wav
 test-assets/*.rtf

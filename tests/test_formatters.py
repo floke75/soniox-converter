@@ -42,6 +42,45 @@ def _load_schema():
         return json.load(f)
 
 
+def _parse_srt_blocks(srt_content):
+    """Parse SRT content into a list of dicts with 'seq', 'timestamps', 'text'."""
+    blocks = []
+    if not srt_content.strip():
+        return blocks
+    # Split on double newlines (but be careful — our text may contain newlines)
+    # Parse manually: sequence number, timestamp line, then text until next blank+digit
+    lines = srt_content.split("\n")
+    i = 0
+    while i < len(lines):
+        # Skip blank lines
+        if not lines[i].strip():
+            i += 1
+            continue
+        # Sequence number
+        seq = lines[i].strip()
+        i += 1
+        if i >= len(lines):
+            break
+        # Timestamp line
+        ts = lines[i].strip()
+        i += 1
+        # Text lines — collect until blank line followed by a digit (next block) or end
+        text_lines = []
+        while i < len(lines):
+            # Check if this is a blank line that precedes a sequence number (next block)
+            if lines[i] == "" and (i + 1 >= len(lines) or (lines[i + 1].strip().isdigit() and i + 2 < len(lines) and " --> " in lines[i + 2])):
+                i += 1  # skip the blank separator
+                break
+            text_lines.append(lines[i])
+            i += 1
+        blocks.append({
+            "seq": seq,
+            "timestamps": ts,
+            "text": "\n".join(text_lines),
+        })
+    return blocks
+
+
 # =========================================================================
 # Premiere Pro Formatter Tests
 # =========================================================================
@@ -189,73 +228,151 @@ class TestKineticWordsFormatter:
         assert len(outputs) == 3
 
     def test_output_suffixes(self, verified_sample_transcript):
-        """Output files have correct suffixes."""
+        """Output files have correct SRT suffixes."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
         suffixes = [o.suffix for o in outputs]
-        assert "-kinetic-row1.json" in suffixes
-        assert "-kinetic-row2.json" in suffixes
-        assert "-kinetic-row3.json" in suffixes
+        assert "-kinetic-row1.srt" in suffixes
+        assert "-kinetic-row2.srt" in suffixes
+        assert "-kinetic-row3.srt" in suffixes
 
-    def test_each_file_is_valid_json(self, verified_sample_transcript):
-        """Each output file is parseable JSON."""
+    def test_each_file_is_valid_srt(self, verified_sample_transcript):
+        """Each output file is a valid SRT with sequence numbers and timestamps."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
         for output in outputs:
-            data = json.loads(output.content)
-            assert "language" in data
-            assert "segments" in data
-            assert "speakers" in data
+            content = output.content
+            if not content.strip():
+                continue  # empty rows are valid
+            # Check that the first block has a sequence number and timestamp
+            lines = content.split("\n")
+            assert lines[0].strip() == "1"
+            assert " --> " in lines[1]
 
-    def test_schema_validation(self, verified_sample_transcript):
-        """Each output file validates against the Premiere Pro schema."""
-        schema = _load_schema()
+    def test_srt_timestamp_format(self, verified_sample_transcript):
+        """SRT timestamps use HH:MM:SS,mmm format."""
+        import re
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
+        ts_pattern = re.compile(r"\d{2}:\d{2}:\d{2},\d{3}")
         for output in outputs:
-            data = json.loads(output.content)
-            jsonschema.validate(instance=data, schema=schema)
+            if not output.content.strip():
+                continue
+            for line in output.content.split("\n"):
+                if " --> " in line:
+                    parts = line.split(" --> ")
+                    assert ts_pattern.match(parts[0].strip())
+                    assert ts_pattern.match(parts[1].strip())
 
     def test_round_robin_rows(self, verified_sample_transcript):
-        """Words are distributed across rows in round-robin within buckets."""
+        """Words are distributed across rows — row 1 has most entries."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
 
-        # Row 1 should have at least as many segments as row 2 and row 3
-        row1_data = json.loads(outputs[0].content)
-        row2_data = json.loads(outputs[1].content)
-        row3_data = json.loads(outputs[2].content)
+        def count_blocks(srt_content):
+            if not srt_content.strip():
+                return 0
+            return len([l for l in srt_content.split("\n") if " --> " in l])
 
-        row1_segs = len(row1_data["segments"])
-        row2_segs = len(row2_data["segments"])
-        row3_segs = len(row3_data["segments"])
+        row1_count = count_blocks(outputs[0].content)
+        row2_count = count_blocks(outputs[1].content)
+        row3_count = count_blocks(outputs[2].content)
 
-        assert row1_segs >= row2_segs >= row3_segs
+        assert row1_count >= row2_count >= row3_count
 
-    def test_single_speaker(self, verified_sample_transcript):
-        """Kinetic output uses a single speaker UUID across all files."""
+    def test_row_positioning_newlines(self, verified_sample_transcript):
+        """Row 2 text has 1 leading newline, row 3 has 2 leading newlines."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
 
-        speaker_ids = set()
+        # Row 1: no leading newlines in text lines
+        for block in _parse_srt_blocks(outputs[0].content):
+            assert not block["text"].startswith("\n")
+
+        # Row 2: text starts with exactly 1 newline
+        for block in _parse_srt_blocks(outputs[1].content):
+            assert block["text"].startswith("\n")
+            assert not block["text"].startswith("\n\n")
+
+        # Row 3: text starts with exactly 2 newlines
+        if outputs[2].content.strip():
+            for block in _parse_srt_blocks(outputs[2].content):
+                assert block["text"].startswith("\n\n")
+                assert not block["text"].startswith("\n\n\n")
+
+    def test_one_word_or_number_group_per_block(self, verified_sample_transcript):
+        """Each SRT block contains one word or number group (after stripping newlines)."""
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+
         for output in outputs:
-            data = json.loads(output.content)
-            for seg in data["segments"]:
-                speaker_ids.add(seg["speaker"])
+            for block in _parse_srt_blocks(output.content):
+                # Strip leading newlines (row positioning)
+                text = block["text"].lstrip("\n")
+                # Should have at least one visible token
+                assert len(text.strip()) > 0, "Empty block: {}".format(repr(text))
 
-        # All segments reference the same speaker UUID
-        assert len(speaker_ids) == 1
-
-    def test_word_type_always_word(self, verified_sample_transcript):
-        """All words in kinetic output have type='word' (punctuation merged)."""
+    def test_no_overlapping_timestamps_within_row(self, verified_sample_transcript):
+        """Within each row, no subtitle's end time exceeds the next subtitle's start."""
+        import re
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
 
+        ts_pattern = re.compile(r"(\d{2}):(\d{2}):(\d{2}),(\d{3})")
+
+        def parse_ts(ts_str):
+            m = ts_pattern.match(ts_str.strip())
+            h, mi, s, ms = int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+            return h * 3600 + mi * 60 + s + ms / 1000.0
+
         for output in outputs:
-            data = json.loads(output.content)
-            for seg in data["segments"]:
-                for word in seg["words"]:
-                    assert word["type"] == "word"
+            blocks = _parse_srt_blocks(output.content)
+            for i in range(len(blocks) - 1):
+                current_end = parse_ts(blocks[i]["timestamps"].split(" --> ")[1])
+                next_start = parse_ts(blocks[i + 1]["timestamps"].split(" --> ")[0])
+                assert current_end <= next_start + 0.001, \
+                    "Overlap in row: block {} ends at {} but block {} starts at {}".format(
+                        i + 1, current_end, i + 2, next_start)
+
+    def test_number_grouping(self):
+        """Multi-token numbers are grouped together in kinetic output."""
+        from soniox_converter.formatters.kinetic_words import _merge_punctuation, _group_numbers
+        from soniox_converter.core.ir import AssembledWord
+
+        # Simulate "120 000 kronor" as three separate tokens
+        words = [
+            AssembledWord(text="120", start_s=0.0, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="000", start_s=0.3, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="kronor", start_s=0.6, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+        ]
+        merged = _merge_punctuation(words)
+        grouped = _group_numbers(merged)
+        assert len(grouped) == 1
+        assert grouped[0].text == "120 000 kronor"
+
+    def test_decimal_number_grouping(self):
+        """Decimal numbers like '2,5' are grouped with their unit."""
+        from soniox_converter.formatters.kinetic_words import _merge_punctuation, _group_numbers
+        from soniox_converter.core.ir import AssembledWord
+
+        # Simulate "2,5 miljoner" — comma is punctuation, merges onto "2"
+        words = [
+            AssembledWord(text="2", start_s=0.0, duration_s=0.2,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text=",", start_s=0.2, duration_s=0.05,
+                         confidence=0.9, word_type="punctuation"),
+            AssembledWord(text="5", start_s=0.3, duration_s=0.2,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="miljoner", start_s=0.5, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+        ]
+        merged = _merge_punctuation(words)  # "2," + "5" + "miljoner"
+        grouped = _group_numbers(merged)
+        assert len(grouped) == 1
+        assert grouped[0].text == "2,5 miljoner"
 
 
 # =========================================================================

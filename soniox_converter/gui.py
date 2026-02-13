@@ -592,7 +592,7 @@ class TranscriberApp:
 
         self._input_path = path
         self._file_label.configure(
-            text=str(path.name), foreground="black"
+            text=str(path.name), foreground="white"
         )
         self._transcribe_btn.configure(state=tk.NORMAL)
 
@@ -602,7 +602,7 @@ class TranscriberApp:
         # Default output dir to input file's directory
         if self._output_dir is None:
             self._outdir_label.configure(
-                text=str(path.parent), foreground="black"
+                text=str(path.parent), foreground="white"
             )
 
     def _auto_discover_context(self, audio_path: Path) -> None:
@@ -637,7 +637,7 @@ class TranscriberApp:
         if path:
             self._script_path = Path(path)
             self._script_label.configure(
-                text=Path(path).name, foreground="black"
+                text=Path(path).name, foreground="white"
             )
 
     def _clear_script(self) -> None:
@@ -656,7 +656,7 @@ class TranscriberApp:
             terms = load_terms(path)
             self._terms_label.configure(
                 text="{} ({} terms)".format(Path(path).name, len(terms)),
-                foreground="black",
+                foreground="white",
             )
 
     def _clear_terms(self) -> None:
@@ -669,14 +669,14 @@ class TranscriberApp:
         path = filedialog.askdirectory(title="Select Output Directory")
         if path:
             self._output_dir = Path(path)
-            self._outdir_label.configure(text=str(path), foreground="black")
+            self._outdir_label.configure(text=str(path), foreground="white")
 
     def _reset_output_dir(self) -> None:
         """Reset output directory to same as input file."""
         self._output_dir = None
         if self._input_path:
             self._outdir_label.configure(
-                text=str(self._input_path.parent), foreground="black"
+                text=str(self._input_path.parent), foreground="white"
             )
         else:
             self._outdir_label.configure(
@@ -992,10 +992,14 @@ class TranscriberApp:
 
         if script_path:
             script_text = load_script(script_path)
-            on_status("  Script: {} (explicit)".format(script_path.name))
+            on_status("  Script: {} (explicit, {} chars)".format(
+                script_path.name, len(script_text)))
         elif companion.script_path:
             script_text = load_script(companion.script_path)
-            on_status("  Script: {} (auto-discovered)".format(companion.script_path.name))
+            on_status("  Script: {} (auto-discovered, {} chars)".format(
+                companion.script_path.name, len(script_text)))
+        else:
+            on_status("  Script: (none found)")
 
         if terms_path:
             all_terms.extend(load_terms(terms_path))
@@ -1185,9 +1189,18 @@ class TranscriberApp:
                     display_name = si.display_name
                     break
 
-            words_text = " ".join(
-                w.text for w in segment.words if w.word_type == "word"
-            )
+            # Merge punctuation onto preceding word (same as plain text formatter)
+            parts: List[str] = []
+            for w in segment.words:
+                if w.word_type == "punctuation" and parts:
+                    parts[-1] += w.text
+                elif w.word_type == "word":
+                    # Suppress space after comma/dash for decimal numbers
+                    if parts and parts[-1][-1:] in (",", "-") and w.text.isdigit():
+                        parts[-1] += w.text
+                    else:
+                        parts.append(w.text)
+            words_text = " ".join(parts)
             if words_text:
                 lines.append("{}: {}".format(display_name, words_text))
 
