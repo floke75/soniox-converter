@@ -1189,9 +1189,14 @@ class TranscriberApp:
                     display_name = si.display_name
                     break
 
-            words_text = " ".join(
-                w.text for w in segment.words if w.word_type == "word"
-            )
+            # Merge punctuation onto preceding word (same as plain text formatter)
+            parts: List[str] = []
+            for w in segment.words:
+                if w.word_type == "punctuation" and parts:
+                    parts[-1] += w.text
+                elif w.word_type == "word":
+                    parts.append(w.text)
+            words_text = " ".join(parts)
             if words_text:
                 lines.append("{}: {}".format(display_name, words_text))
 
