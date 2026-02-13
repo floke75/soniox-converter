@@ -592,7 +592,7 @@ class TranscriberApp:
 
         self._input_path = path
         self._file_label.configure(
-            text=str(path.name), foreground="black"
+            text=str(path.name), foreground="white"
         )
         self._transcribe_btn.configure(state=tk.NORMAL)
 
@@ -602,7 +602,7 @@ class TranscriberApp:
         # Default output dir to input file's directory
         if self._output_dir is None:
             self._outdir_label.configure(
-                text=str(path.parent), foreground="black"
+                text=str(path.parent), foreground="white"
             )
 
     def _auto_discover_context(self, audio_path: Path) -> None:
@@ -637,7 +637,7 @@ class TranscriberApp:
         if path:
             self._script_path = Path(path)
             self._script_label.configure(
-                text=Path(path).name, foreground="black"
+                text=Path(path).name, foreground="white"
             )
 
     def _clear_script(self) -> None:
@@ -656,7 +656,7 @@ class TranscriberApp:
             terms = load_terms(path)
             self._terms_label.configure(
                 text="{} ({} terms)".format(Path(path).name, len(terms)),
-                foreground="black",
+                foreground="white",
             )
 
     def _clear_terms(self) -> None:
@@ -669,14 +669,14 @@ class TranscriberApp:
         path = filedialog.askdirectory(title="Select Output Directory")
         if path:
             self._output_dir = Path(path)
-            self._outdir_label.configure(text=str(path), foreground="black")
+            self._outdir_label.configure(text=str(path), foreground="white")
 
     def _reset_output_dir(self) -> None:
         """Reset output directory to same as input file."""
         self._output_dir = None
         if self._input_path:
             self._outdir_label.configure(
-                text=str(self._input_path.parent), foreground="black"
+                text=str(self._input_path.parent), foreground="white"
             )
         else:
             self._outdir_label.configure(
