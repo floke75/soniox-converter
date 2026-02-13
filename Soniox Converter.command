@@ -35,4 +35,4 @@ fi
 
 # ── Load env and launch ──────────────────────────────────────────
 export $(grep -v '^#' .env | xargs)
-exec .venv/bin/python3 "$SCRIPT_DIR/_launch_gui.py"
+exec .venv/bin/python3 -m soniox_converter.gui
