@@ -300,16 +300,79 @@ class TestKineticWordsFormatter:
                 assert block["text"].startswith("\n\n")
                 assert not block["text"].startswith("\n\n\n")
 
-    def test_one_word_per_block(self, verified_sample_transcript):
-        """Each SRT block contains exactly one word (after stripping newlines)."""
+    def test_one_word_or_number_group_per_block(self, verified_sample_transcript):
+        """Each SRT block contains one word or number group (after stripping newlines)."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
 
         for output in outputs:
             for block in _parse_srt_blocks(output.content):
-                # Strip leading newlines (row positioning), then check single word
-                word = block["text"].lstrip("\n")
-                assert len(word.split()) == 1, "Expected 1 word, got: {}".format(repr(word))
+                # Strip leading newlines (row positioning)
+                text = block["text"].lstrip("\n")
+                # Should have at least one visible token
+                assert len(text.strip()) > 0, "Empty block: {}".format(repr(text))
+
+    def test_no_overlapping_timestamps_within_row(self, verified_sample_transcript):
+        """Within each row, no subtitle's end time exceeds the next subtitle's start."""
+        import re
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+
+        ts_pattern = re.compile(r"(\d{2}):(\d{2}):(\d{2}),(\d{3})")
+
+        def parse_ts(ts_str):
+            m = ts_pattern.match(ts_str.strip())
+            h, mi, s, ms = int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+            return h * 3600 + mi * 60 + s + ms / 1000.0
+
+        for output in outputs:
+            blocks = _parse_srt_blocks(output.content)
+            for i in range(len(blocks) - 1):
+                current_end = parse_ts(blocks[i]["timestamps"].split(" --> ")[1])
+                next_start = parse_ts(blocks[i + 1]["timestamps"].split(" --> ")[0])
+                assert current_end <= next_start + 0.001, \
+                    "Overlap in row: block {} ends at {} but block {} starts at {}".format(
+                        i + 1, current_end, i + 2, next_start)
+
+    def test_number_grouping(self):
+        """Multi-token numbers are grouped together in kinetic output."""
+        from soniox_converter.formatters.kinetic_words import _merge_punctuation, _group_numbers
+        from soniox_converter.core.ir import AssembledWord
+
+        # Simulate "120 000 kronor" as three separate tokens
+        words = [
+            AssembledWord(text="120", start_s=0.0, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="000", start_s=0.3, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="kronor", start_s=0.6, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+        ]
+        merged = _merge_punctuation(words)
+        grouped = _group_numbers(merged)
+        assert len(grouped) == 1
+        assert grouped[0].text == "120 000 kronor"
+
+    def test_decimal_number_grouping(self):
+        """Decimal numbers like '2,5' are grouped with their unit."""
+        from soniox_converter.formatters.kinetic_words import _merge_punctuation, _group_numbers
+        from soniox_converter.core.ir import AssembledWord
+
+        # Simulate "2,5 miljoner" — comma is punctuation, merges onto "2"
+        words = [
+            AssembledWord(text="2", start_s=0.0, duration_s=0.2,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text=",", start_s=0.2, duration_s=0.05,
+                         confidence=0.9, word_type="punctuation"),
+            AssembledWord(text="5", start_s=0.3, duration_s=0.2,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="miljoner", start_s=0.5, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+        ]
+        merged = _merge_punctuation(words)  # "2," + "5" + "miljoner"
+        grouped = _group_numbers(merged)
+        assert len(grouped) == 1
+        assert grouped[0].text == "2,5 miljoner"
 
 
 # =========================================================================

@@ -29,11 +29,16 @@ RULES:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import List
 
 from soniox_converter.core.ir import AssembledWord, Transcript
 from soniox_converter.formatters.base import BaseFormatter, FormatterOutput
+
+# Matches tokens that look like part of a number: digits, decimal separators,
+# digit groups with spaces (e.g. "120", "000", "2,", "25-"), and lone separators.
+_NUMBER_PART_RE = re.compile(r"^[\d.,\-]+$")
 
 
 @dataclass
@@ -91,6 +96,87 @@ def _merge_punctuation(words: List[AssembledWord]) -> List[_MergedWord]:
                 eos=w.eos,
             ))
     return merged
+
+
+def _is_number_part(text: str) -> bool:
+    """Check if a token looks like part of a multi-token number.
+
+    Matches: "2,", "5", "120", "000", "25-", "30"
+    Does not match: regular words like "miljoner", "kronor"
+    """
+    return bool(_NUMBER_PART_RE.match(text))
+
+
+def _group_numbers(words: List[_MergedWord]) -> List[_MergedWord]:
+    """Group multi-token numbers into single merged words.
+
+    WHY: Soniox tokenises numbers like "2,5" as ["2,", "5"], "120 000" as
+    ["120", "000"], and "25-30" as ["25-", "30"]. In kinetic captions these
+    must stay together so "2,5 miljoner" appears as one visual group, not
+    split across rows.
+
+    HOW: When a number-like token is followed by another number-like token,
+    merge them (with a space if needed). Continue merging as long as the
+    next token is also numeric. Then also absorb the following non-numeric
+    word (e.g. "miljoner", "kronor") into the same merged word so the
+    number and its unit stay together in the same bucket slot.
+    """
+    if not words:
+        return words
+
+    result: List[_MergedWord] = []
+    i = 0
+    while i < len(words):
+        word = words[i]
+
+        # Check if this starts a number sequence
+        if _is_number_part(word.text):
+            # Accumulate consecutive number parts
+            group_text = word.text
+            group_start = word.start_s
+            group_end = word.start_s + word.duration_s
+            group_confidence = word.confidence
+            group_eos = word.eos
+            j = i + 1
+
+            while j < len(words) and _is_number_part(words[j].text):
+                next_w = words[j]
+                # Join with space unless previous ends with comma/dash
+                # (e.g. "2," + "5" → "2,5" but "120" + "000" → "120 000")
+                if group_text.endswith((",", "-")):
+                    group_text += next_w.text
+                else:
+                    group_text += " " + next_w.text
+                group_end = next_w.start_s + next_w.duration_s
+                group_confidence = min(group_confidence, next_w.confidence)
+                if next_w.eos:
+                    group_eos = True
+                j += 1
+
+            # If we merged multiple number tokens, also absorb the next
+            # non-numeric word as the unit (e.g. "miljoner", "kronor")
+            if j > i + 1 and j < len(words) and not _is_number_part(words[j].text):
+                unit = words[j]
+                group_text += " " + unit.text
+                group_end = unit.start_s + unit.duration_s
+                group_confidence = min(group_confidence, unit.confidence)
+                if unit.eos:
+                    group_eos = True
+                j += 1
+
+            result.append(_MergedWord(
+                text=group_text,
+                start_s=group_start,
+                duration_s=group_end - group_start,
+                confidence=group_confidence,
+                eos=group_eos,
+            ))
+            i = j
+        else:
+            result.append(word)
+            i += 1
+
+    return result
 
 
 def _split_sentences(words: List[_MergedWord]) -> List[List[_MergedWord]]:
@@ -198,7 +284,7 @@ def _build_srt_rows(
             text = prefix + word.text
             row_entries[row_idx].append((word.start_s, bucket_end, text))
 
-    # Build SRT strings
+    # Build SRT strings, clamping end times to avoid overlaps within a row
     srt_contents: List[str] = []
     for row_idx in range(max_bucket_size):
         entries = row_entries[row_idx]
@@ -208,6 +294,11 @@ def _build_srt_rows(
 
         lines: List[str] = []
         for seq_num, (start_s, end_s, text) in enumerate(entries, 1):
+            # Clamp end_s so it doesn't overlap the next entry on this row
+            if seq_num < len(entries):
+                next_start = entries[seq_num][0]  # seq_num is 1-based, so index = seq_num
+                if end_s > next_start:
+                    end_s = next_start
             lines.append(str(seq_num))
             lines.append("{} --> {}".format(
                 _format_srt_timestamp(start_s),
@@ -278,6 +369,9 @@ class KineticWordsFormatter(BaseFormatter):
         if not merged:
             # Empty transcript — return three empty SRT files
             return self._empty_outputs()
+
+        # Step 1b: Group multi-token numbers (e.g. "2," + "5" → "2,5")
+        merged = _group_numbers(merged)
 
         # Step 2: Split into sentences
         sentences = _split_sentences(merged)
