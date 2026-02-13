@@ -34,5 +34,5 @@ if [ ! -f ".env" ] || ! grep -q "SONIOX_API_KEY" .env 2>/dev/null; then
 fi
 
 # ── Load env and launch ──────────────────────────────────────────
-export $(grep -v '^#' .env | xargs)
+set -a; source .env; set +a
 exec .venv/bin/python3 -m soniox_converter.gui
