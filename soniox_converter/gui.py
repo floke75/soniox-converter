@@ -1195,7 +1195,11 @@ class TranscriberApp:
                 if w.word_type == "punctuation" and parts:
                     parts[-1] += w.text
                 elif w.word_type == "word":
-                    parts.append(w.text)
+                    # Suppress space after comma/dash for decimal numbers
+                    if parts and parts[-1][-1:] in (",", "-") and w.text.isdigit():
+                        parts[-1] += w.text
+                    else:
+                        parts.append(w.text)
             words_text = " ".join(parts)
             if words_text:
                 lines.append("{}: {}".format(display_name, words_text))
