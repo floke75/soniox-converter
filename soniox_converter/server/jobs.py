@@ -161,21 +161,20 @@ class JobStore:
                     )
                 )
 
-        job_id = uuid.uuid4().hex
-        now = time.time()
-        output_dir = Path(tempfile.mkdtemp(prefix="soniox_job_"))
+            job_id = uuid.uuid4().hex
+            now = time.time()
+            output_dir = Path(tempfile.mkdtemp(prefix="soniox_job_"))
 
-        job = Job(
-            id=job_id,
-            status=JobStatus.PENDING,
-            filename=filename,
-            output_dir=output_dir,
-            created_at=now,
-            updated_at=now,
-            config=config or {},
-        )
+            job = Job(
+                id=job_id,
+                status=JobStatus.PENDING,
+                filename=filename,
+                output_dir=output_dir,
+                created_at=now,
+                updated_at=now,
+                config=config or {},
+            )
 
-        with self._lock:
             self._jobs[job_id] = job
 
         logger.info("Created job %s for file %s", job_id, filename)
