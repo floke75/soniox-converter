@@ -126,6 +126,19 @@ class TestCreateTranscription:
         assert resp.status_code == 400
         assert "Unsupported file type" in resp.json()["detail"]
 
+    def test_path_traversal_filename_is_sanitized(self, client):
+        """Uploading a file with path traversal characters strips directory components."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file(name="../../evil.mp3")],
+        )
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["filename"] == "evil.mp3"
+        job = job_store.get_job(body["id"])
+        assert job is not None
+        assert job.filename == "evil.mp3"
+
     def test_reject_invalid_output_format(self, client):
         """Specifying an unknown output format returns 400."""
         resp = client.post(
@@ -135,6 +148,24 @@ class TestCreateTranscription:
         )
         assert resp.status_code == 400
         assert "Unknown output format" in resp.json()["detail"]
+
+    def test_max_jobs_returns_429(self, client):
+        """Exceeding max concurrent jobs returns 429."""
+        job_store.max_jobs = 1
+        try:
+            resp1 = client.post(
+                "/transcriptions",
+                files=[_make_audio_file()],
+            )
+            assert resp1.status_code == 201
+            resp2 = client.post(
+                "/transcriptions",
+                files=[_make_audio_file(name="second.mp3")],
+            )
+            assert resp2.status_code == 429
+            assert "Maximum number of concurrent jobs" in resp2.json()["detail"]
+        finally:
+            job_store.max_jobs = 100
 
     def test_default_config_values(self, client):
         """Default config values are applied when not specified."""
@@ -358,6 +389,44 @@ class TestDownloadFile:
 
         resp = client.get("/transcriptions/{}/files/any-file.json".format(job_id))
         assert resp.status_code == 409
+
+    def test_download_file_path_traversal_dotdot_rejected(self, client):
+        """Downloading a file with '..' in the name returns 400."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file()],
+        )
+        job_id = resp.json()["id"]
+        job_store.update_job(
+            job_id,
+            status=JobStatus.COMPLETED,
+            output_files=["test-transcript.json"],
+        )
+
+        resp = client.get(
+            "/transcriptions/{}/files/..evil.json".format(job_id)
+        )
+        assert resp.status_code == 400
+        assert "Invalid filename" in resp.json()["detail"]
+
+    def test_download_file_path_traversal_backslash_rejected(self, client):
+        """Downloading a file with backslash returns 400."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file()],
+        )
+        job_id = resp.json()["id"]
+        job_store.update_job(
+            job_id,
+            status=JobStatus.COMPLETED,
+            output_files=["test-transcript.json"],
+        )
+
+        resp = client.get(
+            "/transcriptions/{}/files/..\\evil.json".format(job_id)
+        )
+        assert resp.status_code == 400
+        assert "Invalid filename" in resp.json()["detail"]
 
     def test_download_file_nonexistent_job(self, client):
         """Downloading from a nonexistent job returns 404."""

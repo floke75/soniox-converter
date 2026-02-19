@@ -126,10 +126,15 @@ class JobStore:
     - run_in_background() wraps a callable with error handling and status updates
     """
 
-    def __init__(self, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> None:
+    def __init__(
+        self,
+        ttl_seconds: int = DEFAULT_TTL_SECONDS,
+        max_jobs: int = 100,
+    ) -> None:
         self._jobs: Dict[str, Job] = {}
         self._lock = threading.Lock()
         self._ttl_seconds = ttl_seconds
+        self.max_jobs = max_jobs
 
     def create_job(
         self,
@@ -149,6 +154,14 @@ class JobStore:
         - The temp directory is created immediately and persists until
           the job is deleted or expires
         """
+        with self._lock:
+            if len(self._jobs) >= self.max_jobs:
+                raise ValueError(
+                    "Maximum number of concurrent jobs ({}) reached".format(
+                        self.max_jobs
+                    )
+                )
+
         job_id = uuid.uuid4().hex
         now = time.time()
         output_dir = Path(tempfile.mkdtemp(prefix="soniox_job_"))

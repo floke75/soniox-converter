@@ -95,6 +95,23 @@ class TestJobCreation:
         assert job.config == config
         store.delete_job(job.id)
 
+    def test_max_jobs_limit_enforced(self):
+        store = _make_store(max_jobs=2)
+        j1 = store.create_job("a.mp3")
+        j2 = store.create_job("b.mp3")
+        with pytest.raises(ValueError, match="Maximum number of concurrent jobs"):
+            store.create_job("c.mp3")
+        store.delete_job(j1.id)
+        store.delete_job(j2.id)
+
+    def test_max_jobs_allows_after_delete(self):
+        store = _make_store(max_jobs=1)
+        j1 = store.create_job("a.mp3")
+        store.delete_job(j1.id)
+        j2 = store.create_job("b.mp3")
+        assert j2 is not None
+        store.delete_job(j2.id)
+
     def test_default_config_is_empty_dict(self):
         store = _make_store()
         job = store.create_job("test.mp3")

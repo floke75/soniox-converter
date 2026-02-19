@@ -251,6 +251,7 @@ def _run_transcription_sync(job_id: str, store: JobStore) -> None:
     ),
     responses={
         400: {"model": ErrorResponse, "description": "Invalid file type or configuration"},
+        429: {"model": ErrorResponse, "description": "Too many concurrent jobs"},
     },
 )
 async def create_transcription(
@@ -281,7 +282,9 @@ async def create_transcription(
         ),
     ] = None,
 ) -> JobCreatedResponse:
-    filename = file.filename or "upload"
+    # Sanitize filename to prevent path traversal
+    raw_filename = file.filename or "upload"
+    filename = Path(raw_filename).name
     _validate_file_extension(filename)
 
     # Parse and validate output formats
@@ -307,7 +310,10 @@ async def create_transcription(
     }
 
     # Create job
-    job = job_store.create_job(filename=filename, config=config)
+    try:
+        job = job_store.create_job(filename=filename, config=config)
+    except ValueError as exc:
+        raise HTTPException(status_code=429, detail=str(exc))
 
     # Save uploaded file to the job's output directory
     input_path = job.output_dir / filename
@@ -405,6 +411,13 @@ async def download_transcription_file(
     job_id: str,
     filename: str,
 ) -> Response:
+    # Ensure filename doesn't contain path separators
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename",
+        )
+
     job = job_store.get_job(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found: {}".format(job_id))
