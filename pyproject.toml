@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "soniox-converter"
@@ -22,6 +22,13 @@ dependencies = [
 dev = [
     "pytest>=7.0",
 ]
+
+[project.scripts]
+soniox-api = "soniox_converter.server.app:run_api"
+soniox-slack = "soniox_converter.slack.bot:main"
+
+[tool.setuptools.packages.find]
+include = ["soniox_converter*", "format_captions*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
