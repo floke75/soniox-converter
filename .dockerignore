@@ -1,0 +1,16 @@
+.git
+__pycache__
+*.pyc
+.env
+*.egg-info
+.venv
+firebase-debug.log
+.pytest_cache
+.DS_Store
+*.mp4
+*.mp3
+*.wav
+script.rtf
+soniox-converter-prd.md
+soniox_async_api_reference.md
+format_captions_llm_documentation.md

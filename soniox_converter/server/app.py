@@ -561,6 +561,12 @@ async def health_check() -> HealthResponse:
 # ---------------------------------------------------------------------------
 
 
+def run_api():
+    """Entry point for the soniox-api console script."""
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
 def _infer_media_type(filename: str) -> str:
     """Infer MIME type from filename extension.
 
