@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, List, Optional
 
@@ -50,7 +51,30 @@ logger = logging.getLogger(__name__)
 # App and store setup
 # ---------------------------------------------------------------------------
 
+job_store = JobStore()
+
+
+async def _periodic_cleanup() -> None:
+    """Run job cleanup every 5 minutes."""
+    while True:
+        await asyncio.sleep(300)
+        job_store.cleanup_expired()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start periodic cleanup on startup, cancel on shutdown."""
+    task = asyncio.create_task(_periodic_cleanup())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Soniox Transcript Converter API",
     description=(
         "REST API for transcribing audio/video files using Soniox ASR "
@@ -62,8 +86,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
-job_store = JobStore()
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +250,7 @@ def _run_transcription_sync(job_id: str, store: JobStore) -> None:
     """Synchronous wrapper for the async transcription pipeline.
 
     WHY: FastAPI BackgroundTasks run synchronous callables. This wraps
-    the async pipeline with asyncio.run() for use with job_store.run_in_background().
+    the async pipeline with asyncio.run().
     """
     asyncio.run(_run_transcription_pipeline(job_id, store))
 

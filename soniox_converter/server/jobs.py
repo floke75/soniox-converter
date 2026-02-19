@@ -32,7 +32,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,6 @@ class JobStore:
     - update_job() sets status, error, progress, and/or output_files
     - delete_job() removes the job and cleans up its temp directory
     - cleanup_expired() removes jobs past their TTL and their temp dirs
-    - run_in_background() wraps a callable with error handling and status updates
     """
 
     def __init__(
@@ -313,37 +312,6 @@ class JobStore:
             logger.info("Expired job %s (completed %.0fs ago)", job.id, now - job.completed_at)
 
         return len(expired_jobs)
-
-    def run_in_background(
-        self,
-        job_id: str,
-        task_callable: Callable[[str, "JobStore"], None],
-    ) -> None:
-        """Execute a task callable as a background job with error handling.
-
-        WHY: Transcription jobs are long-running. The API returns a job ID
-        immediately and processes work in the background. This method wraps
-        the callable with status management and error handling.
-
-        HOW: Calls the task_callable with the job_id and this store instance.
-        On unhandled exceptions, updates the job to FAILED with the error
-        message.
-
-        RULES:
-        - task_callable signature: (job_id: str, store: JobStore) -> None
-        - The callable is responsible for updating job status as it progresses
-        - On exception, job status is set to FAILED with the error message
-        - This method is meant to be called from FastAPI's BackgroundTasks
-        """
-        try:
-            task_callable(job_id, self)
-        except Exception as exc:
-            logger.exception("Background task failed for job %s", job_id)
-            self.update_job(
-                job_id,
-                status=JobStatus.FAILED,
-                error=str(exc),
-            )
 
     @staticmethod
     def _cleanup_output_dir(output_dir: Path) -> None:
