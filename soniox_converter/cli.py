@@ -28,8 +28,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
-import uuid
-from collections import Counter
 from pathlib import Path
 from typing import List, Optional
 
@@ -40,19 +38,17 @@ from soniox_converter.config import (
     DEFAULT_SECONDARY_LANGUAGE,
     SONIOX_SUPPORTED_FORMATS,
 )
-from soniox_converter.core.assembler import assemble_tokens, filter_translation_tokens
+from soniox_converter.core.assembler import (
+    assemble_tokens,
+    build_transcript,
+    filter_translation_tokens,
+)
 from soniox_converter.core.context import (
     build_context,
     load_default_terms,
     load_script,
     load_terms,
     resolve_companion_files,
-)
-from soniox_converter.core.ir import (
-    AssembledWord,
-    Segment,
-    SpeakerInfo,
-    Transcript,
 )
 from soniox_converter.formatters import FORMATTERS
 from soniox_converter.formatters.base import FormatterOutput
@@ -70,134 +66,6 @@ def _status(msg: str) -> None:
     - Always flush after writing
     """
     print(msg, file=sys.stderr, flush=True)
-
-
-def _build_transcript(
-    words: List[AssembledWord],
-    source_filename: str,
-) -> Transcript:
-    """Build a Transcript IR from assembled words.
-
-    WHY: The assembler produces a flat list of AssembledWord objects.
-    Formatters expect a Transcript with speaker-grouped segments,
-    speaker metadata, and language info. This function bridges the gap.
-
-    HOW: Walks through words and creates a new Segment whenever the
-    speaker label changes. Collects unique speakers and assigns UUIDs
-    and display names. Determines the primary language by majority vote.
-
-    RULES:
-    - New segment whenever speaker changes (speaker-turn segmentation)
-    - SpeakerInfo gets a UUID v4 and "Speaker N" display name
-    - Primary language is the most frequent language among words
-    - Duration is from start of first word to end of last word
-
-    Args:
-        words: Flat list of AssembledWord objects from the assembler.
-        source_filename: Original audio/video filename for output naming.
-
-    Returns:
-        Complete Transcript IR ready for formatters.
-    """
-    if not words:
-        return Transcript(
-            segments=[],
-            speakers=[],
-            primary_language="",
-            source_filename=source_filename,
-            duration_s=0.0,
-        )
-
-    # Build segments by speaker turns
-    segments: List[Segment] = []
-    current_speaker: Optional[str] = words[0].speaker
-    current_words: List[AssembledWord] = [words[0]]
-
-    for word in words[1:]:
-        if word.speaker != current_speaker and word.word_type == "word":
-            # Flush current segment
-            segments.append(_build_segment(current_words, current_speaker))
-            current_words = [word]
-            current_speaker = word.speaker
-        else:
-            current_words.append(word)
-
-    # Flush last segment
-    if current_words:
-        segments.append(_build_segment(current_words, current_speaker))
-
-    # Build speaker info
-    seen_speakers: dict = {}
-    speaker_list: List[SpeakerInfo] = []
-    speaker_index = 1
-    for seg in segments:
-        label = seg.speaker
-        if label is not None and label not in seen_speakers:
-            info = SpeakerInfo(
-                soniox_label=label,
-                display_name="Speaker {}".format(speaker_index),
-                uuid=str(uuid.uuid4()),
-            )
-            seen_speakers[label] = info
-            speaker_list.append(info)
-            speaker_index += 1
-
-    # Determine primary language by majority vote
-    lang_counts: Counter = Counter()
-    for word in words:
-        if word.language:
-            lang_counts[word.language] += 1
-    primary_language = lang_counts.most_common(1)[0][0] if lang_counts else ""
-
-    # Total duration
-    last_word = words[-1]
-    duration_s = last_word.start_s + last_word.duration_s
-
-    return Transcript(
-        segments=segments,
-        speakers=speaker_list,
-        primary_language=primary_language,
-        source_filename=source_filename,
-        duration_s=duration_s,
-    )
-
-
-def _build_segment(
-    words: List[AssembledWord],
-    speaker: Optional[str],
-) -> Segment:
-    """Build a single Segment from a list of words.
-
-    WHY: Segments group contiguous words from a single speaker with
-    timing and language metadata.
-
-    HOW: Computes start/duration from first and last word timing.
-    Determines the dominant language from word languages.
-
-    RULES:
-    - start_s is the first word's start
-    - duration_s spans from first word start to last word end
-    - language is the most frequent language among words in this segment
-    """
-    first = words[0]
-    last_w = words[-1]
-    start_s = first.start_s
-    duration_s = (last_w.start_s + last_w.duration_s) - start_s
-
-    # Dominant language in this segment
-    lang_counts: Counter = Counter()
-    for w in words:
-        if w.language:
-            lang_counts[w.language] += 1
-    language = lang_counts.most_common(1)[0][0] if lang_counts else ""
-
-    return Segment(
-        speaker=speaker,
-        language=language,
-        start_s=start_s,
-        duration_s=duration_s,
-        words=list(words),
-    )
 
 
 def _resolve_output_path(
@@ -495,7 +363,7 @@ async def _run_pipeline(args: argparse.Namespace) -> None:
             _status("  Assembled {} words".format(len(words)))
 
             # Step 6: Build Transcript IR
-            transcript = _build_transcript(words, input_path.name)
+            transcript = build_transcript(words, input_path.name)
             _status("  {} segments, {} speakers, primary language: {}".format(
                 len(transcript.segments),
                 len(transcript.speakers),
