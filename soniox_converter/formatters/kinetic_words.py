@@ -11,9 +11,7 @@ HOW: Words are merged with trailing punctuation, split into sentences via
 EOS markers, then each sentence is divided into buckets of ``max_bucket_size``
 words (default 3). Each word in a bucket is assigned to a row (1, 2, 3) by
 position. Three separate SRT files are produced — one per row — where each
-file contains only the words that appear on that row. Line breaks position
-the word vertically: row 1 has no leading newlines, row 2 has one leading
-newline, row 3 has two leading newlines.
+file contains only the words that appear on that row.
 
 RULES:
 - Single speaker only — ignores diarization, treats entire transcript as one
@@ -91,13 +89,19 @@ def _merge_punctuation(words: List[AssembledWord]) -> List[_MergedWord]:
                 if prev.text.endswith(('.', '!', '?')):
                     prev.eos = True
         else:
-            merged.append(_MergedWord(
+            mw = _MergedWord(
                 text=w.text,
                 start_s=w.start_s,
                 duration_s=w.duration_s,
                 confidence=w.confidence,
                 eos=w.eos,
-            ))
+            )
+            # Belt-and-suspenders: mark as sentence end if word text
+            # ends with sentence-ending punctuation (handles cases where
+            # the period is part of the word token, not a separate token)
+            if mw.text.endswith(('.', '!', '?')):
+                mw.eos = True
+            merged.append(mw)
     return merged
 
 

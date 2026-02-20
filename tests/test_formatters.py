@@ -328,6 +328,88 @@ class TestKineticWordsFormatter:
         assert any("Hej" in t for t in row1_texts), "First sentence should start at row 1"
         assert any("Tack" in t for t in row1_texts), "Second sentence should also start at row 1"
 
+    def test_sentence_boundary_resets_for_embedded_punctuation(self):
+        """Bucket row resets when punctuation is embedded in word token (not separate)."""
+        # Simulates a scenario where Soniox emits the period as part of the word
+        words = [
+            AssembledWord(text="Hej", start_s=0.0, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="alla.", start_s=0.3, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="Tack", start_s=1.0, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="så", start_s=1.3, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="mycket!", start_s=1.6, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="Bra", start_s=2.0, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+        ]
+        transcript = Transcript(
+            segments=[
+                Segment(speaker="1", language="sv", start_s=0.0,
+                        duration_s=2.3, words=words),
+            ],
+            speakers=[SpeakerInfo(soniox_label="1", display_name="Speaker 1", uuid="uuid-1")],
+            primary_language="sv",
+            source_filename="test.mp4",
+            duration_s=2.3,
+        )
+
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(transcript)
+
+        # Parse all rows
+        row1_blocks = _parse_srt_blocks(outputs[0].content)
+        row1_texts = [b["text"] for b in row1_blocks]
+
+        # All three sentences should start at row 1
+        assert any("Hej" in t for t in row1_texts), "Sentence 1 should start at row 1"
+        assert any("Tack" in t for t in row1_texts), "Sentence 2 should start at row 1"
+        assert any("Bra" in t for t in row1_texts), "Sentence 3 should start at row 1"
+
+    def test_single_word_sentences_all_on_row_1(self):
+        """Single-word sentences (e.g., 'Ja. Nej. Ok.') all appear on row 1."""
+        words = [
+            AssembledWord(text="Ja", start_s=0.0, duration_s=0.2,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text=".", start_s=0.2, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation", eos=False),
+            AssembledWord(text="Nej", start_s=0.5, duration_s=0.2,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text=".", start_s=0.7, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation", eos=False),
+            AssembledWord(text="Ok", start_s=1.0, duration_s=0.2,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text=".", start_s=1.2, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation", eos=False),
+        ]
+        transcript = Transcript(
+            segments=[
+                Segment(speaker="1", language="sv", start_s=0.0,
+                        duration_s=1.22, words=words),
+            ],
+            speakers=[SpeakerInfo(soniox_label="1", display_name="Speaker 1", uuid="uuid-1")],
+            primary_language="sv",
+            source_filename="test.mp4",
+            duration_s=1.22,
+        )
+
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(transcript)
+
+        row1_blocks = _parse_srt_blocks(outputs[0].content)
+        row1_texts = [b["text"] for b in row1_blocks]
+
+        assert len(row1_blocks) == 3, f"Expected 3 entries on row 1, got {len(row1_blocks)}"
+        assert "Ja." in row1_texts
+        assert "Nej." in row1_texts
+        assert "Ok." in row1_texts
+
+        # Row 2 and 3 should be empty (each sentence is only 1 word)
+        assert outputs[1].content.strip() == "", "Row 2 should be empty for single-word sentences"
+        assert outputs[2].content.strip() == "", "Row 3 should be empty for single-word sentences"
+
     def test_one_word_or_number_group_per_block(self, verified_sample_transcript):
         """Each SRT block contains one word or number group (after stripping newlines)."""
         formatter = KineticWordsFormatter()
