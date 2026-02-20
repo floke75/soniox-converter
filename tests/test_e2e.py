@@ -30,7 +30,7 @@ _HAS_API_KEY = bool(os.getenv("SONIOX_API_KEY", "").strip())
 _TEST_ASSETS = Path(__file__).resolve().parent.parent / "test-assets"
 _TEST_AUDIO = _TEST_ASSETS / "SOME_260213_melodifestivalen_lowq.mp4"
 _TEST_AUDIO_WAV = _TEST_ASSETS / "SOME_260213_melodifestivalen_lowq.mp4.wav"
-_SCHEMA_PATH = Path(__file__).resolve().parent.parent / "PremierePro_transcript_format_spec.json"
+_SCHEMA_PATH = Path(__file__).resolve().parent.parent / "soniox_converter" / "formatters" / "PremierePro_transcript_format_spec.json"
 
 
 def _get_test_audio():

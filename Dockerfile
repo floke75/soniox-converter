@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir .
 # Copy tests and test assets, run tests
 COPY tests/ tests/
 COPY test-assets/ test-assets/
-COPY PremierePro_transcript_format_spec.json .
 RUN pip install --no-cache-dir pytest
 RUN python3 -m pytest tests/ -v --tb=short
 

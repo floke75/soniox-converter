@@ -33,7 +33,7 @@ from soniox_converter.config import UNKNOWN_LANGUAGE_CODE, map_language
 from soniox_converter.core.ir import AssembledWord, SpeakerInfo, Transcript
 from soniox_converter.formatters.base import BaseFormatter, FormatterOutput
 
-_SCHEMA_PATH = Path(__file__).resolve().parent.parent.parent / "PremierePro_transcript_format_spec.json"
+_SCHEMA_PATH = Path(__file__).resolve().parent / "PremierePro_transcript_format_spec.json"
 
 
 def _load_schema() -> dict[str, Any]:

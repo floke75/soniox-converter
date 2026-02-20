@@ -34,7 +34,7 @@ from soniox_converter.formatters.kinetic_words import KineticWordsFormatter
 from soniox_converter.formatters.srt_captions import SRTCaptionFormatter
 from soniox_converter.adapters.caption_adapter import transcript_to_caption_words
 
-SCHEMA_PATH = Path(__file__).resolve().parent.parent / "PremierePro_transcript_format_spec.json"
+SCHEMA_PATH = Path(__file__).resolve().parent.parent / "soniox_converter" / "formatters" / "PremierePro_transcript_format_spec.json"
 
 
 def _load_schema():
