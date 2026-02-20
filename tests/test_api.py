@@ -181,6 +181,107 @@ class TestCreateTranscription:
         assert job.config["diarization"] is True
         assert job.config["output_formats"] is None
 
+    def test_submit_with_terms(self, client):
+        """Submitting with terms parses them as a comma-separated list."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file()],
+            data={"terms": "Melodifestivalen, SVT, EFN"},
+        )
+        assert resp.status_code == 201
+        job_id = resp.json()["id"]
+        job = job_store.get_job(job_id)
+        assert job is not None
+        assert job.config["terms"] == ["Melodifestivalen", "SVT", "EFN"]
+
+    def test_submit_with_general_context(self, client):
+        """Submitting with general_context parses key:value pairs."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file()],
+            data={"general_context": "domain:Media, topic:Music"},
+        )
+        assert resp.status_code == 201
+        job_id = resp.json()["id"]
+        job = job_store.get_job(job_id)
+        assert job is not None
+        assert job.config["general_context"] == [
+            {"key": "domain", "value": "Media"},
+            {"key": "topic", "value": "Music"},
+        ]
+
+    def test_submit_with_context_file_txt(self, client):
+        """Submitting with a .txt context file stores script_text."""
+        script_content = "This is a test script for the prompter."
+        resp = client.post(
+            "/transcriptions",
+            files=[
+                _make_audio_file(),
+                ("context_file", ("script.txt", io.BytesIO(script_content.encode("utf-8")), "text/plain")),
+            ],
+        )
+        assert resp.status_code == 201
+        job_id = resp.json()["id"]
+        job = job_store.get_job(job_id)
+        assert job is not None
+        assert job.config["script_text"] == script_content
+
+    def test_reject_non_txt_context_file(self, client):
+        """Submitting a non-.txt context file returns 422."""
+        resp = client.post(
+            "/transcriptions",
+            files=[
+                _make_audio_file(),
+                ("context_file", ("script.pdf", io.BytesIO(b"fake pdf"), "application/pdf")),
+            ],
+        )
+        assert resp.status_code == 422
+        assert "must be .txt" in resp.json()["detail"]
+
+    def test_context_size_validation(self, client):
+        """Context exceeding 10,000 chars returns 422."""
+        # Create a script that will exceed 10,000 chars
+        large_script = "A" * 11000
+        resp = client.post(
+            "/transcriptions",
+            files=[
+                _make_audio_file(),
+                ("context_file", ("script.txt", io.BytesIO(large_script.encode("utf-8")), "text/plain")),
+            ],
+        )
+        assert resp.status_code == 422
+        assert "context" in resp.json()["detail"].lower()
+
+    def test_empty_context_fields_handled_gracefully(self, client):
+        """Empty context fields don't cause errors."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file()],
+            data={"terms": "", "general_context": ""},
+        )
+        assert resp.status_code == 201
+        job_id = resp.json()["id"]
+        job = job_store.get_job(job_id)
+        assert job is not None
+        assert job.config["terms"] is None
+        assert job.config["general_context"] is None
+
+    def test_context_visible_in_get_response(self, client):
+        """Context fields are visible in GET /transcriptions/{id} response."""
+        resp = client.post(
+            "/transcriptions",
+            files=[_make_audio_file()],
+            data={"terms": "SVT,EFN", "general_context": "domain:Media"},
+        )
+        assert resp.status_code == 201
+        job_id = resp.json()["id"]
+
+        resp = client.get("/transcriptions/{}".format(job_id))
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["config"]["terms"] == ["SVT", "EFN"]
+        assert body["config"]["general_context"] == [{"key": "domain", "value": "Media"}]
+
 
 # ---------------------------------------------------------------------------
 # GET /transcriptions/{id}

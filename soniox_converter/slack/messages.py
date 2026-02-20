@@ -33,6 +33,16 @@ ACTION_SECONDARY_LANG = "secondary_language_select"
 ACTION_DIARIZATION = "diarization_toggle"
 ACTION_FORMATS = "output_formats_select"
 
+# Modal action IDs and callback
+ACTION_OPEN_MODAL = "open_transcription_modal"
+MODAL_CALLBACK_ID = "transcription_modal"
+ACTION_MODAL_PRIMARY_LANG = "modal_primary_language_select"
+ACTION_MODAL_SECONDARY_LANG = "modal_secondary_language_select"
+ACTION_MODAL_DIARIZATION = "modal_diarization_checkbox"
+ACTION_MODAL_FORMATS = "modal_formats_select"
+ACTION_MODAL_TERMS = "terms_input"
+ACTION_MODAL_GENERAL_CONTEXT = "general_context_input"
+
 # Language options for dropdowns
 LANGUAGE_OPTIONS = [
     ("sv", "Swedish"),
@@ -225,6 +235,264 @@ def build_transcription_form(filename: str, file_id: str) -> List[Dict[str, Any]
     ]
 
     return blocks
+
+
+# ---------------------------------------------------------------------------
+# Modal builders
+# ---------------------------------------------------------------------------
+
+
+def build_open_modal_message(filename: str, file_id: str) -> List[Dict[str, Any]]:
+    """Build a compact in-channel message with a button to open the modal.
+
+    WHY: file_shared events don't provide a trigger_id, so we can't open
+    a modal directly. Instead we post a message with a button; clicking
+    the button provides the trigger_id needed for views_open.
+    """
+    return [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*{}*".format(filename),
+            },
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Transkribera"},
+                    "style": "primary",
+                    "action_id": ACTION_OPEN_MODAL,
+                    "value": file_id,
+                }
+            ],
+        },
+    ]
+
+
+def build_transcription_modal(
+    filename: str,
+    file_id: str,
+    channel: str,
+    thread_ts: str,
+    script_info: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Build a Slack modal view for transcription configuration.
+
+    WHY: Modals provide a richer form experience than in-channel Block Kit
+    forms — proper input blocks with labels, hints, validation, and a
+    submit button built into the chrome.
+
+    HOW: Constructs a view object with input blocks for language, diarization,
+    output formats, and context fields. File metadata is passed through
+    private_metadata JSON for retrieval on submit.
+
+    Args:
+        filename: Name of the uploaded audio/video file.
+        file_id: Slack file ID.
+        channel: Channel where the file was shared.
+        thread_ts: Thread timestamp for posting results.
+        script_info: Optional dict with script file info
+            {"file_id": str, "filename": str, "size": int}.
+    """
+    import json
+
+    # Build private_metadata payload
+    metadata = {
+        "file_id": file_id,
+        "channel": channel,
+        "thread_ts": thread_ts,
+        "script_file_id": script_info["file_id"] if script_info else None,
+        "script_filename": script_info["filename"] if script_info else None,
+    }
+
+    # Language dropdown options
+    lang_options = [
+        {
+            "text": {"type": "plain_text", "text": label},
+            "value": code,
+        }
+        for code, label in LANGUAGE_OPTIONS
+    ]
+
+    # Secondary language includes "Ingen" (None) option
+    secondary_lang_options = [
+        {
+            "text": {"type": "plain_text", "text": "Ingen"},
+            "value": "none",
+        }
+    ] + lang_options
+
+    # Format options for multi_static_select
+    format_options = [
+        {
+            "text": {"type": "plain_text", "text": label},
+            "value": key,
+        }
+        for key, label in FORMAT_OPTIONS
+    ]
+
+    initial_formats = [
+        opt for opt in format_options
+        if opt["value"] in DEFAULT_FORMATS
+    ]
+
+    # Build blocks
+    blocks = [
+        # -- Fil --
+        {"type": "header", "text": {"type": "plain_text", "text": "Fil"}},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "* {}*".format(filename)},
+        },
+        {"type": "divider"},
+
+        # -- Sprak --
+        {"type": "header", "text": {"type": "plain_text", "text": "Sprak"}},
+        {
+            "type": "input",
+            "block_id": "primary_language",
+            "label": {"type": "plain_text", "text": "Primart sprak"},
+            "element": {
+                "type": "static_select",
+                "action_id": ACTION_MODAL_PRIMARY_LANG,
+                "options": lang_options,
+                "initial_option": {
+                    "text": {"type": "plain_text", "text": "Swedish"},
+                    "value": "sv",
+                },
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "secondary_language",
+            "optional": True,
+            "label": {"type": "plain_text", "text": "Sekundart sprak"},
+            "element": {
+                "type": "static_select",
+                "action_id": ACTION_MODAL_SECONDARY_LANG,
+                "options": secondary_lang_options,
+                "initial_option": {
+                    "text": {"type": "plain_text", "text": "English"},
+                    "value": "en",
+                },
+            },
+        },
+        {"type": "divider"},
+
+        # -- Installningar --
+        {"type": "header", "text": {"type": "plain_text", "text": "Installningar"}},
+        {
+            "type": "input",
+            "block_id": "diarization",
+            "optional": True,
+            "label": {"type": "plain_text", "text": "Talaridentifiering"},
+            "element": {
+                "type": "checkboxes",
+                "action_id": ACTION_MODAL_DIARIZATION,
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "Aktivera talaridentifiering"},
+                        "value": "enabled",
+                    }
+                ],
+                "initial_options": [
+                    {
+                        "text": {"type": "plain_text", "text": "Aktivera talaridentifiering"},
+                        "value": "enabled",
+                    }
+                ],
+            },
+        },
+        {"type": "divider"},
+
+        # -- Utdataformat --
+        {"type": "header", "text": {"type": "plain_text", "text": "Utdataformat"}},
+        {
+            "type": "input",
+            "block_id": "output_formats",
+            "label": {"type": "plain_text", "text": "Format"},
+            "element": {
+                "type": "multi_static_select",
+                "action_id": ACTION_MODAL_FORMATS,
+                "options": format_options,
+                "initial_options": initial_formats,
+            },
+        },
+        {"type": "divider"},
+
+        # -- Kontext --
+        {"type": "header", "text": {"type": "plain_text", "text": "Kontext"}},
+    ]
+
+    # Script file indicator (if detected)
+    if script_info:
+        size = script_info.get("size", 0)
+        blocks.append({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "Manus: {} ({:,} tecken)".format(
+                        script_info["filename"], size
+                    ),
+                }
+            ],
+        })
+
+    # Terms input
+    blocks.append({
+        "type": "input",
+        "block_id": "terms",
+        "optional": True,
+        "label": {"type": "plain_text", "text": "Termer"},
+        "hint": {
+            "type": "plain_text",
+            "text": "Kommaseparerade domantermer, t.ex. Melodifestivalen, SVT, EFN",
+        },
+        "element": {
+            "type": "plain_text_input",
+            "action_id": ACTION_MODAL_TERMS,
+            "placeholder": {
+                "type": "plain_text",
+                "text": "Melodifestivalen, SVT, EFN",
+            },
+            "multiline": False,
+        },
+    })
+
+    # General context input
+    blocks.append({
+        "type": "input",
+        "block_id": "general_context",
+        "optional": True,
+        "label": {"type": "plain_text", "text": "Allman kontext"},
+        "hint": {
+            "type": "plain_text",
+            "text": "Nyckel:varde-par, kommaseparerade. T.ex. doman:Media, amne:Musik",
+        },
+        "element": {
+            "type": "plain_text_input",
+            "action_id": ACTION_MODAL_GENERAL_CONTEXT,
+            "placeholder": {
+                "type": "plain_text",
+                "text": "doman:Media, amne:Musikprogram, organisation:SVT",
+            },
+            "multiline": True,
+        },
+    })
+
+    return {
+        "type": "modal",
+        "callback_id": MODAL_CALLBACK_ID,
+        "title": {"type": "plain_text", "text": "Transkribera"},
+        "submit": {"type": "plain_text", "text": "Transkribera"},
+        "close": {"type": "plain_text", "text": "Avbryt"},
+        "private_metadata": json.dumps(metadata),
+        "blocks": blocks,
+    }
 
 
 # ---------------------------------------------------------------------------
