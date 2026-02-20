@@ -34,7 +34,7 @@ from soniox_converter.formatters.kinetic_words import KineticWordsFormatter
 from soniox_converter.formatters.srt_captions import SRTCaptionFormatter
 from soniox_converter.adapters.caption_adapter import transcript_to_caption_words
 
-SCHEMA_PATH = Path(__file__).resolve().parent.parent / "PremierePro_transcript_format_spec.json"
+SCHEMA_PATH = Path(__file__).resolve().parent.parent / "soniox_converter" / "formatters" / "PremierePro_transcript_format_spec.json"
 
 
 def _load_schema():
@@ -281,24 +281,134 @@ class TestKineticWordsFormatter:
         assert row1_count >= row2_count >= row3_count
 
     def test_row_positioning_newlines(self, verified_sample_transcript):
-        """Row 2 text has 1 leading newline, row 3 has 2 leading newlines."""
+        """No rows have leading newlines — all text is on the first line."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
 
-        # Row 1: no leading newlines in text lines
-        for block in _parse_srt_blocks(outputs[0].content):
-            assert not block["text"].startswith("\n")
+        for row_idx, output in enumerate(outputs):
+            for block in _parse_srt_blocks(output.content):
+                assert not block["text"].startswith("\n"), \
+                    "Row {} has leading newline: {}".format(row_idx + 1, repr(block["text"]))
 
-        # Row 2: text starts with exactly 1 newline
-        for block in _parse_srt_blocks(outputs[1].content):
-            assert block["text"].startswith("\n")
-            assert not block["text"].startswith("\n\n")
+    def test_sentence_boundary_resets_row_assignment(self):
+        """Bucket row assignment resets at sentence boundaries (.!?)."""
+        # Two short sentences: "Hej alla." and "Tack så." — each has 2 words
+        # Both should start at row 1 (not continue from where the previous ended)
+        words = [
+            AssembledWord(text="Hej", start_s=0.0, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="alla", start_s=0.3, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text=".", start_s=0.6, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation"),
+            AssembledWord(text="Tack", start_s=1.0, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text="så", start_s=1.3, duration_s=0.3,
+                         confidence=0.9, word_type="word"),
+            AssembledWord(text=".", start_s=1.6, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation"),
+        ]
+        transcript = Transcript(
+            segments=[
+                Segment(speaker="1", language="sv", start_s=0.0,
+                        duration_s=1.62, words=words),
+            ],
+            speakers=[SpeakerInfo(soniox_label="1", display_name="Speaker 1", uuid="uuid-1")],
+            primary_language="sv",
+            source_filename="test.mp4",
+            duration_s=1.62,
+        )
 
-        # Row 3: text starts with exactly 2 newlines
-        if outputs[2].content.strip():
-            for block in _parse_srt_blocks(outputs[2].content):
-                assert block["text"].startswith("\n\n")
-                assert not block["text"].startswith("\n\n\n")
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(transcript)
+
+        # Parse row 1 — should have entries for the first word of BOTH sentences
+        row1_blocks = _parse_srt_blocks(outputs[0].content)
+        row1_texts = [b["text"] for b in row1_blocks]
+        assert any("Hej" in t for t in row1_texts), "First sentence should start at row 1"
+        assert any("Tack" in t for t in row1_texts), "Second sentence should also start at row 1"
+
+    def test_sentence_boundary_resets_for_embedded_punctuation(self):
+        """Bucket row resets when punctuation is embedded in word token (not separate)."""
+        # Simulates a scenario where Soniox emits the period as part of the word
+        words = [
+            AssembledWord(text="Hej", start_s=0.0, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="alla.", start_s=0.3, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="Tack", start_s=1.0, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="så", start_s=1.3, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="mycket!", start_s=1.6, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text="Bra", start_s=2.0, duration_s=0.3,
+                         confidence=0.9, word_type="word", eos=False),
+        ]
+        transcript = Transcript(
+            segments=[
+                Segment(speaker="1", language="sv", start_s=0.0,
+                        duration_s=2.3, words=words),
+            ],
+            speakers=[SpeakerInfo(soniox_label="1", display_name="Speaker 1", uuid="uuid-1")],
+            primary_language="sv",
+            source_filename="test.mp4",
+            duration_s=2.3,
+        )
+
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(transcript)
+
+        # Parse all rows
+        row1_blocks = _parse_srt_blocks(outputs[0].content)
+        row1_texts = [b["text"] for b in row1_blocks]
+
+        # All three sentences should start at row 1
+        assert any("Hej" in t for t in row1_texts), "Sentence 1 should start at row 1"
+        assert any("Tack" in t for t in row1_texts), "Sentence 2 should start at row 1"
+        assert any("Bra" in t for t in row1_texts), "Sentence 3 should start at row 1"
+
+    def test_single_word_sentences_all_on_row_1(self):
+        """Single-word sentences (e.g., 'Ja. Nej. Ok.') all appear on row 1."""
+        words = [
+            AssembledWord(text="Ja", start_s=0.0, duration_s=0.2,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text=".", start_s=0.2, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation", eos=False),
+            AssembledWord(text="Nej", start_s=0.5, duration_s=0.2,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text=".", start_s=0.7, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation", eos=False),
+            AssembledWord(text="Ok", start_s=1.0, duration_s=0.2,
+                         confidence=0.9, word_type="word", eos=False),
+            AssembledWord(text=".", start_s=1.2, duration_s=0.02,
+                         confidence=0.99, word_type="punctuation", eos=False),
+        ]
+        transcript = Transcript(
+            segments=[
+                Segment(speaker="1", language="sv", start_s=0.0,
+                        duration_s=1.22, words=words),
+            ],
+            speakers=[SpeakerInfo(soniox_label="1", display_name="Speaker 1", uuid="uuid-1")],
+            primary_language="sv",
+            source_filename="test.mp4",
+            duration_s=1.22,
+        )
+
+        formatter = KineticWordsFormatter()
+        outputs = formatter.format(transcript)
+
+        row1_blocks = _parse_srt_blocks(outputs[0].content)
+        row1_texts = [b["text"] for b in row1_blocks]
+
+        assert len(row1_blocks) == 3, f"Expected 3 entries on row 1, got {len(row1_blocks)}"
+        assert "Ja." in row1_texts
+        assert "Nej." in row1_texts
+        assert "Ok." in row1_texts
+
+        # Row 2 and 3 should be empty (each sentence is only 1 word)
+        assert outputs[1].content.strip() == "", "Row 2 should be empty for single-word sentences"
+        assert outputs[2].content.strip() == "", "Row 3 should be empty for single-word sentences"
 
     def test_one_word_or_number_group_per_block(self, verified_sample_transcript):
         """Each SRT block contains one word or number group (after stripping newlines)."""

@@ -11,9 +11,7 @@ HOW: Words are merged with trailing punctuation, split into sentences via
 EOS markers, then each sentence is divided into buckets of ``max_bucket_size``
 words (default 3). Each word in a bucket is assigned to a row (1, 2, 3) by
 position. Three separate SRT files are produced — one per row — where each
-file contains only the words that appear on that row. Line breaks position
-the word vertically: row 1 has no leading newlines, row 2 has one leading
-newline, row 3 has two leading newlines.
+file contains only the words that appear on that row.
 
 RULES:
 - Single speaker only — ignores diarization, treats entire transcript as one
@@ -87,14 +85,23 @@ def _merge_punctuation(words: List[AssembledWord]) -> List[_MergedWord]:
                 # Inherit eos from punctuation if set
                 if w.eos:
                     prev.eos = True
+                # Also mark as sentence end if text ends with sentence-ending punctuation
+                if prev.text.endswith(('.', '!', '?')):
+                    prev.eos = True
         else:
-            merged.append(_MergedWord(
+            mw = _MergedWord(
                 text=w.text,
                 start_s=w.start_s,
                 duration_s=w.duration_s,
                 confidence=w.confidence,
                 eos=w.eos,
-            ))
+            )
+            # Belt-and-suspenders: mark as sentence end if word text
+            # ends with sentence-ending punctuation (handles cases where
+            # the period is part of the word token, not a separate token)
+            if mw.text.endswith(('.', '!', '?')):
+                mw.eos = True
+            merged.append(mw)
     return merged
 
 
@@ -266,11 +273,6 @@ def _build_srt_rows(
     Each bucket assigns words to rows by position: word 0 → row 1,
     word 1 → row 2, word 2 → row 3. Each row gets a separate SRT file.
 
-    Line breaks position the word vertically within the subtitle block:
-    - Row 1: word text (no leading newlines)
-    - Row 2: one leading newline + word text
-    - Row 3: two leading newlines + word text
-
     Returns a list of ``max_bucket_size`` SRT content strings.
     """
     # Collect subtitle entries per row: list of (start_s, end_s, text)
@@ -279,9 +281,7 @@ def _build_srt_rows(
     for bucket in all_buckets:
         bucket_end = bucket.end_s
         for row_idx, word in enumerate(bucket.words):
-            # Add leading newlines to position the word on its row
-            prefix = "\n" * row_idx
-            text = prefix + word.text
+            text = word.text
             row_entries[row_idx].append((word.start_s, bucket_end, text))
 
     # Build SRT strings, clamping end times to avoid overlaps within a row
@@ -328,7 +328,7 @@ class KineticWordsFormatter(BaseFormatter):
     - Single speaker (ignores diarization)
     - Punctuation merged onto preceding word before bucketing
     - Three output files: -kinetic-row1.srt, -kinetic-row2.srt, -kinetic-row3.srt
-    - Row position encoded via leading newlines (row1: none, row2: 1, row3: 2)
+    - Row position determined by word index within bucket (0→row1, 1→row2, 2→row3)
     - Configurable via constructor: max_bucket_size, max_hold_s, final_hold_s,
       min_word_display_s
     """

@@ -30,5 +30,8 @@ soniox-slack = "soniox_converter.slack.bot:main"
 [tool.setuptools.packages.find]
 include = ["soniox_converter*", "format_captions*"]
 
+[tool.setuptools.package-data]
+"soniox_converter.formatters" = ["*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

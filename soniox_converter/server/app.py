@@ -22,6 +22,7 @@ RULES:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -31,6 +32,7 @@ from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadF
 from fastapi.responses import Response
 
 from soniox_converter.config import SONIOX_SUPPORTED_FORMATS
+from soniox_converter.core.context import build_context
 from soniox_converter.formatters import FORMATTERS
 from soniox_converter.server.jobs import Job, JobStatus, JobStore
 from soniox_converter.server.models import (
@@ -171,13 +173,16 @@ async def _run_transcription_pipeline(job_id: str, store: JobStore) -> None:
             store.update_job(job_id, status=JobStatus.UPLOADING)
             file_id = await client.upload_file(input_path)
 
-            # Create transcription
+            # Create transcription (with optional context)
             store.update_job(job_id, status=JobStatus.TRANSCRIBING)
             transcription_id = await client.create_transcription(
                 file_id=file_id,
                 language_hints=language_hints,
                 enable_diarization=enable_diarization,
                 enable_language_identification=True,
+                script_text=config.get("script_text"),
+                terms=config.get("terms"),
+                general_context=config.get("general_context"),
             )
 
             # Poll until complete
@@ -303,6 +308,28 @@ async def create_transcription(
             )
         ),
     ] = None,
+    context_file: Annotated[
+        Optional[UploadFile],
+        File(description="Optional .txt file containing script/prompter text for context."),
+    ] = None,
+    terms: Annotated[
+        Optional[str],
+        Form(
+            description=(
+                "Comma-separated domain terms to improve transcription accuracy "
+                "(e.g. 'Melodifestivalen, SVT, EFN')."
+            )
+        ),
+    ] = None,
+    general_context: Annotated[
+        Optional[str],
+        Form(
+            description=(
+                "Comma-separated key:value pairs for general context "
+                "(e.g. 'domain:Media, topic:Music')."
+            )
+        ),
+    ] = None,
 ) -> JobCreatedResponse:
     # Sanitize filename to prevent path traversal
     raw_filename = file.filename or "upload"
@@ -323,12 +350,58 @@ async def create_transcription(
                     ),
                 )
 
+    # Parse context parameters
+    terms_list = None  # type: Optional[List[str]]
+    if terms:
+        terms_list = [t.strip() for t in terms.split(",") if t.strip()]
+
+    general_list = None  # type: Optional[List[dict]]
+    if general_context:
+        general_list = []
+        for pair in general_context.split(","):
+            pair = pair.strip()
+            if ":" in pair:
+                key, value = pair.split(":", 1)
+                general_list.append({"key": key.strip(), "value": value.strip()})
+
+    script_text = None  # type: Optional[str]
+    if context_file:
+        if not context_file.filename or not context_file.filename.endswith(".txt"):
+            raise HTTPException(
+                status_code=422,
+                detail="Context file must be .txt format",
+            )
+        content_bytes = await context_file.read()
+        script_text = content_bytes.decode("utf-8")
+
+    # Validate context size using build_context from core.context
+    try:
+        context = build_context(
+            script_text=script_text,
+            terms=terms_list,
+            general=general_list,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Context too large: {}".format(exc))
+    if context:
+        context_str = json.dumps(context)
+        if len(context_str) > 10000:
+            raise HTTPException(
+                status_code=422,
+                detail="Context too large ({} chars, max 10,000)".format(
+                    len(context_str)
+                ),
+            )
+
     # Build config dict for the job store
     config = {
         "primary_language": primary_language,
         "secondary_language": secondary_language,
         "diarization": diarization,
         "output_formats": format_keys,
+        "script_text": script_text,
+        "terms": terms_list,
+        "general_context": general_list,
     }
 
     # Create job
