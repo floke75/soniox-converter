@@ -69,13 +69,14 @@ LANGUAGE_OPTIONS = [
 # Output format options
 FORMAT_OPTIONS = [
     ("premiere_pro", "Premiere Pro JSON"),
-    ("srt_captions", "SRT Broadcast (16:9)"),
+    ("srt_broadcast", "SRT Broadcast (16:9)"),
+    ("srt_social", "SRT Social (9:16)"),
     ("plain_text", "Plain Text"),
     ("kinetic_words", "Kinetic Words"),
 ]
 
 # Formats checked by default
-DEFAULT_FORMATS = {"premiere_pro", "srt_captions"}
+DEFAULT_FORMATS = {"premiere_pro", "srt_broadcast"}
 
 # Audio/video extensions accepted (matches config.SONIOX_SUPPORTED_FORMATS)
 SUPPORTED_EXTENSIONS = {

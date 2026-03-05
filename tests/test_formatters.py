@@ -528,6 +528,78 @@ class TestSRTCaptionFormatter:
             assert " --> " in output.content
 
 
+class TestSRTBroadcastFormatter:
+    """SRT broadcast formatter tests."""
+
+    def test_produces_one_file(self, verified_sample_transcript):
+        """Produces only broadcast SRT file."""
+        from soniox_converter.formatters.srt_captions import SRTBroadcastFormatter
+        formatter = SRTBroadcastFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        assert len(outputs) == 1
+
+    def test_output_suffix(self, verified_sample_transcript):
+        """Output has broadcast suffix."""
+        from soniox_converter.formatters.srt_captions import SRTBroadcastFormatter
+        formatter = SRTBroadcastFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        assert outputs[0].suffix == "-broadcast.srt"
+
+    def test_output_media_type(self, verified_sample_transcript):
+        """Output media type is SRT."""
+        from soniox_converter.formatters.srt_captions import SRTBroadcastFormatter
+        formatter = SRTBroadcastFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        assert outputs[0].media_type == "application/x-subrip"
+
+    def test_valid_srt_format(self, verified_sample_transcript):
+        """SRT output has valid format."""
+        from soniox_converter.formatters.srt_captions import SRTBroadcastFormatter
+        formatter = SRTBroadcastFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        content = outputs[0].content
+        assert " --> " in content
+        lines = content.strip().split("\n")
+        if lines and lines[0]:
+            assert lines[0].strip().isdigit()
+
+
+class TestSRTSocialFormatter:
+    """SRT social formatter tests."""
+
+    def test_produces_one_file(self, verified_sample_transcript):
+        """Produces only social SRT file."""
+        from soniox_converter.formatters.srt_captions import SRTSocialFormatter
+        formatter = SRTSocialFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        assert len(outputs) == 1
+
+    def test_output_suffix(self, verified_sample_transcript):
+        """Output has social suffix."""
+        from soniox_converter.formatters.srt_captions import SRTSocialFormatter
+        formatter = SRTSocialFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        assert outputs[0].suffix == "-social.srt"
+
+    def test_output_media_type(self, verified_sample_transcript):
+        """Output media type is SRT."""
+        from soniox_converter.formatters.srt_captions import SRTSocialFormatter
+        formatter = SRTSocialFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        assert outputs[0].media_type == "application/x-subrip"
+
+    def test_valid_srt_format(self, verified_sample_transcript):
+        """SRT output has valid format."""
+        from soniox_converter.formatters.srt_captions import SRTSocialFormatter
+        formatter = SRTSocialFormatter()
+        outputs = formatter.format(verified_sample_transcript)
+        content = outputs[0].content
+        assert " --> " in content
+        lines = content.strip().split("\n")
+        if lines and lines[0]:
+            assert lines[0].strip().isdigit()
+
+
 class TestCaptionAdapter:
     """Caption adapter transformation tests."""
 

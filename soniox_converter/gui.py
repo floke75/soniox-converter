@@ -754,13 +754,7 @@ class TranscriberApp:
         selected: List[str] = []
         for key, _, _ in _FORMAT_OPTIONS:
             if self._format_vars[key].get():
-                # Map GUI keys to FORMATTERS keys
-                if key == "srt_broadcast" or key == "srt_social":
-                    # SRT formatter produces both; we track selection for output filtering
-                    if "srt_captions" not in selected:
-                        selected.append("srt_captions")
-                else:
-                    selected.append(key)
+                selected.append(key)
         return selected
 
     def _cancel_transcription(self) -> None:
