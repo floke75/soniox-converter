@@ -1,0 +1,23 @@
+1
+00:00:00,000 --> 00:00:03,800
+Hej! Välkommen till mötet. Vi har mycket
+att gå igenom idag och jag hoppas att alla
+
+2
+00:00:03,850 --> 00:00:07,000
+är redo för en produktiv session.
+Först ska vi diskutera budget.
+
+3
+00:00:07,200 --> 00:00:09,799
+Sedan fortsätter vi med tidsplanen.
+Är det ok för alla?
+
+4
+00:00:10,000 --> 00:00:11,799
+– Bra. Låt oss börja direkt eftersom
+
+5
+00:00:11,849 --> 00:00:14,639
+tiden är knapp och vi måste hinna
+med allt som står på agendan.

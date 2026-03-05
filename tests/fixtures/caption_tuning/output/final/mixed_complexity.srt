@@ -1,0 +1,59 @@
+1
+00:00:00,000 --> 00:00:00,970
+Hej! Välkommen till
+
+2
+00:00:01,020 --> 00:00:01,999
+mötet. Vi har mycket
+
+3
+00:00:02,049 --> 00:00:02,900
+att gå igenom idag
+
+4
+00:00:02,950 --> 00:00:03,800
+och jag hoppas att alla
+
+5
+00:00:03,850 --> 00:00:04,900
+är redo för en produktiv
+
+6
+00:00:04,950 --> 00:00:05,940
+session. Först ska
+
+7
+00:00:05,990 --> 00:00:07,000
+vi diskutera budget.
+
+8
+00:00:07,200 --> 00:00:07,940
+Sedan fortsätter
+
+9
+00:00:07,990 --> 00:00:08,789
+vi med tidsplanen.
+
+10
+00:00:08,970 --> 00:00:09,799
+Är det ok för alla?
+
+11
+00:00:10,000 --> 00:00:11,000
+– Bra. Låt oss börja
+
+12
+00:00:11,050 --> 00:00:12,069
+direkt eftersom tiden
+
+13
+00:00:12,119 --> 00:00:12,969
+är knapp och vi måste
+
+14
+00:00:13,019 --> 00:00:13,769
+hinna med allt som
+
+15
+00:00:13,820 --> 00:00:14,639
+står på agendan.

@@ -1,0 +1,47 @@
+1
+00:00:00,000 --> 00:00:00,950
+Idag ska vi prata om hur
+
+2
+00:00:01,000 --> 00:00:01,899
+vårt projekt utvecklas
+
+3
+00:00:01,950 --> 00:00:02,770
+vidare. Det finns
+
+4
+00:00:02,819 --> 00:00:03,500
+många spännande
+
+5
+00:00:03,549 --> 00:00:04,450
+möjligheter som vi kan
+
+6
+00:00:04,500 --> 00:00:05,469
+utforska tillsammans.
+
+7
+00:00:05,650 --> 00:00:06,570
+– Vi behöver diskutera
+
+8
+00:00:06,620 --> 00:00:07,770
+tidsplanen och resurserna
+
+9
+00:00:07,820 --> 00:00:08,549
+noggrant. Jag
+
+10
+00:00:08,599 --> 00:00:09,529
+föreslår att vi börjar
+
+11
+00:00:09,580 --> 00:00:10,399
+med att identifiera
+
+12
+00:00:10,449 --> 00:00:11,469
+de viktigaste målen.

@@ -20,7 +20,11 @@ from typing import TYPE_CHECKING
 from soniox_converter.formatters.kinetic_words import KineticWordsFormatter
 from soniox_converter.formatters.plain_text import PlainTextFormatter
 from soniox_converter.formatters.premiere_pro import PremiereProFormatter
-from soniox_converter.formatters.srt_captions import SRTCaptionFormatter
+from soniox_converter.formatters.srt_captions import (
+    SRTBroadcastFormatter,
+    SRTCaptionFormatter,
+    SRTSocialFormatter,
+)
 
 if TYPE_CHECKING:
     from soniox_converter.formatters.base import BaseFormatter
@@ -29,5 +33,18 @@ FORMATTERS: dict[str, type[BaseFormatter]] = {
     "premiere_pro": PremiereProFormatter,
     "plain_text": PlainTextFormatter,
     "kinetic_words": KineticWordsFormatter,
-    "srt_captions": SRTCaptionFormatter,
+    "srt_broadcast": SRTBroadcastFormatter,
+    "srt_social": SRTSocialFormatter,
+    "srt_captions": SRTCaptionFormatter,  # deprecated, generates both
 }
+
+# Default formatters used when no explicit format selection is made.
+# Excludes srt_captions (deprecated) to prevent duplicate SRT file generation,
+# but keeps it available for explicit backwards-compatible requests.
+DEFAULT_FORMATTERS = [
+    "premiere_pro",
+    "plain_text",
+    "kinetic_words",
+    "srt_broadcast",
+    "srt_social",
+]

@@ -33,7 +33,7 @@ from fastapi.responses import Response
 
 from soniox_converter.config import SONIOX_SUPPORTED_FORMATS
 from soniox_converter.core.context import build_context
-from soniox_converter.formatters import FORMATTERS
+from soniox_converter.formatters import DEFAULT_FORMATTERS, FORMATTERS
 from soniox_converter.server.jobs import Job, JobStatus, JobStore
 from soniox_converter.server.models import (
     ErrorResponse,
@@ -158,7 +158,7 @@ async def _run_transcription_pipeline(job_id: str, store: JobStore) -> None:
         # Determine format keys
         format_keys = config.get("output_formats")
         if not format_keys:
-            format_keys = list(FORMATTERS.keys())
+            format_keys = DEFAULT_FORMATTERS
 
         # Build language hints
         language_hints = [config.get("primary_language", "sv")]
@@ -304,7 +304,8 @@ async def create_transcription(
         Form(
             description=(
                 "Comma-separated output formats. Available: premiere_pro, "
-                "plain_text, kinetic_words, srt_captions. Defaults to all."
+                "plain_text, kinetic_words, srt_broadcast, srt_social, "
+                "srt_captions (deprecated, use srt_broadcast and srt_social instead). Defaults to all."
             )
         ),
     ] = None,

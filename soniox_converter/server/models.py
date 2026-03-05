@@ -43,7 +43,9 @@ class OutputFormat(str, Enum):
     premiere_pro = "premiere_pro"
     plain_text = "plain_text"
     kinetic_words = "kinetic_words"
-    srt_captions = "srt_captions"
+    srt_broadcast = "srt_broadcast"
+    srt_social = "srt_social"
+    srt_captions = "srt_captions"  # deprecated, generates both
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +128,7 @@ class JobResponse(BaseModel):
                     "primary_language": "sv",
                     "secondary_language": "en",
                     "diarization": True,
-                    "output_formats": ["premiere_pro", "srt_captions"],
+                    "output_formats": ["premiere_pro", "srt_broadcast", "srt_social"],
                 },
                 "error": None,
                 "output_files": None,
