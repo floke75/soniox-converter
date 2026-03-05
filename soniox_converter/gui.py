@@ -1103,23 +1103,12 @@ class TranscriberApp:
                 on_status("Formatting output...")
                 saved_files: List[Path] = []
 
-                # Determine which SRT variants the user wants
-                want_broadcast = self._format_vars.get("srt_broadcast", tk.BooleanVar(value=False)).get()
-                want_social = self._format_vars.get("srt_social", tk.BooleanVar(value=False)).get()
-
                 for key in format_keys:
                     formatter = FORMATTERS[key]()
                     on_status("  Running {} formatter...".format(formatter.name))
                     outputs = formatter.format(transcript)
 
                     for output in outputs:
-                        # Filter SRT outputs based on user selection
-                        if key == "srt_captions":
-                            if output.suffix == "-broadcast.srt" and not want_broadcast:
-                                continue
-                            if output.suffix == "-social.srt" and not want_social:
-                                continue
-
                         path = _resolve_output_path(stem, output.suffix, output_dir)
                         if isinstance(output.content, bytes):
                             path.write_bytes(output.content)

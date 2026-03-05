@@ -12,7 +12,7 @@ with a specific preset, producing one SRT output file each.
 
 RULES:
 - SRTBroadcastFormatter produces {stem}-broadcast.srt (16:9, 2-line, 42 chars)
-- SRTSocialFormatter produces {stem}-social.srt (9:16, 1-line, 25 chars)
+- SRTSocialFormatter produces {stem}-social.srt (9:16, 1-line, 30 chars, soft limit 25)
 - SRTCaptionFormatter (deprecated) produces BOTH files for backwards compatibility
 - Registered as "srt_broadcast", "srt_social", and "srt_captions" in FORMATTERS dict
 - Media type for all outputs: "application/x-subrip"
@@ -102,11 +102,11 @@ class SRTBroadcastFormatter(_SRTFormatterBase):
 
 
 class SRTSocialFormatter(_SRTFormatterBase):
-    """Formatter that produces social SRT caption files (9:16, 1-line, 25 chars).
+    """Formatter that produces social SRT caption files (9:16, 1-line, 30 chars, soft limit 25).
 
     WHY: Editors need SRT captions optimised for social media delivery (9:16
-    aspect ratio, 1-line display, max 25 characters per line). This formatter
-    provides only the social output, allowing users to select it independently.
+    aspect ratio, 1-line display, max 30 characters per line with soft limit at 25).
+    This formatter provides only the social output, allowing users to select it independently.
 
     HOW: Inherits from _SRTFormatterBase and sets preset="social".
 
