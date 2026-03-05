@@ -1,103 +1,99 @@
 1
-00:00:00,000 --> 00:00:00,590
-Under de senaste
+00:00:00,000 --> 00:00:01,000
+Under de senaste månaderna
 
 2
-00:00:00,640 --> 00:00:01,570
-månaderna har vi arbetat
+00:00:01,050 --> 00:00:02,050
+har vi arbetat intensivt
 
 3
-00:00:01,620 --> 00:00:02,050
-intensivt
-
-4
 00:00:02,100 --> 00:00:02,750
 med att utveckla
 
-5
+4
 00:00:02,799 --> 00:00:03,550
 och förbättra våra
 
-6
+5
 00:00:03,600 --> 00:00:04,530
 processer för att kunna
 
-7
+6
 00:00:04,580 --> 00:00:05,650
 leverera högkvalitativa
 
-8
+7
 00:00:05,700 --> 00:00:06,469
 resultat till alla
 
-9
+8
 00:00:06,519 --> 00:00:07,469
 våra kunder. När vi
 
-10
+9
 00:00:07,519 --> 00:00:08,429
 reflekterar över vår
 
-11
+10
 00:00:08,480 --> 00:00:09,399
 resa hittills så ser
 
-12
+11
 00:00:09,449 --> 00:00:10,529
 vi tydligt att samarbetet
 
-13
+12
 00:00:10,580 --> 00:00:11,569
 mellan teamen har varit
 
-14
+13
 00:00:11,619 --> 00:00:12,799
 avgörande för framgången
 
-15
+14
 00:00:12,849 --> 00:00:13,569
 och vi är otroligt
 
-16
+15
 00:00:13,619 --> 00:00:14,279
 stolta över vad
 
-17
+16
 00:00:14,330 --> 00:00:15,149
 vi har åstadkommit
 
-18
+17
 00:00:15,199 --> 00:00:15,799
 tillsammans.
 
-19
+18
 00:00:15,949 --> 00:00:16,800
 – Framöver kommer vi
 
-20
+19
 00:00:16,850 --> 00:00:17,629
 att fokusera ännu
 
-21
+20
 00:00:17,679 --> 00:00:18,550
 mer på innovation
 
-22
+21
 00:00:18,600 --> 00:00:19,730
 och hållbarhet eftersom
 
-23
+22
 00:00:19,780 --> 00:00:20,599
 dessa värderingar
 
-24
+23
 00:00:20,649 --> 00:00:21,449
 är fundamentala
 
-25
+24
 00:00:21,500 --> 00:00:22,399
 för vår långsiktiga
 
-26
+25
 00:00:22,449 --> 00:00:23,519
 vision och strategi.

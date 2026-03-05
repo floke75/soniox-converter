@@ -3,16 +3,16 @@
 Hej alla. Jag heter
 
 2
-00:00:01,050 --> 00:00:02,069
-Anna. Vi ses snart.
+00:00:01,050 --> 00:00:01,750
+Anna. Vi ses
 
 3
-00:00:02,299 --> 00:00:03,180
-Tack för idag. Det
+00:00:01,800 --> 00:00:02,919
+snart. Tack för idag.
 
 4
-00:00:03,229 --> 00:00:04,100
-var bra. Jag gillar
+00:00:03,100 --> 00:00:04,100
+Det var bra. Jag gillar
 
 5
 00:00:04,150 --> 00:00:05,069
@@ -27,12 +27,12 @@ det. Vad tycker du?
 hit nu. Jag vill ha
 
 8
-00:00:06,919 --> 00:00:07,799
-kaffe. Det funkar
+00:00:06,919 --> 00:00:08,070
+kaffe. Det funkar bra.
 
 9
-00:00:07,849 --> 00:00:09,099
-bra. Vi är klara. Bra
+00:00:08,250 --> 00:00:09,099
+Vi är klara. Bra
 
 10
 00:00:09,150 --> 00:00:10,219

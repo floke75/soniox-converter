@@ -7,36 +7,36 @@ Idag ska vi prata om hur
 vårt projekt utvecklas
 
 3
-00:00:01,950 --> 00:00:02,770
-vidare. Det finns
+00:00:01,950 --> 00:00:03,030
+vidare. Det finns många
 
 4
-00:00:02,819 --> 00:00:03,500
-många spännande
+00:00:03,080 --> 00:00:04,049
+spännande möjligheter
 
 5
-00:00:03,549 --> 00:00:04,450
-möjligheter som vi kan
+00:00:04,099 --> 00:00:04,900
+som vi kan utforska
 
 6
-00:00:04,500 --> 00:00:05,469
-utforska tillsammans.
+00:00:04,950 --> 00:00:05,549
+tillsammans.
 
 7
 00:00:05,650 --> 00:00:06,570
 – Vi behöver diskutera
 
 8
-00:00:06,620 --> 00:00:07,770
-tidsplanen och resurserna
+00:00:06,620 --> 00:00:07,100
+tidsplanen
 
 9
-00:00:07,820 --> 00:00:08,549
-noggrant. Jag
+00:00:07,150 --> 00:00:08,269
+och resurserna noggrant.
 
 10
-00:00:08,599 --> 00:00:09,529
-föreslår att vi börjar
+00:00:08,449 --> 00:00:09,529
+Jag föreslår att vi börjar
 
 11
 00:00:09,580 --> 00:00:10,399

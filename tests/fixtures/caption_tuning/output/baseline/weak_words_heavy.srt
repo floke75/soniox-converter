@@ -1,47 +1,43 @@
 1
-00:00:00,000 --> 00:00:00,649
-Det var en bra dag
+00:00:00,000 --> 00:00:00,950
+Det var en bra dag för oss
 
 2
-00:00:00,700 --> 00:00:01,470
-för oss alla och vi är
+00:00:01,000 --> 00:00:01,730
+alla och vi är glada
 
 3
-00:00:01,520 --> 00:00:02,290
-glada för att vi kunde
+00:00:01,780 --> 00:00:02,700
+för att vi kunde träffas.
 
 4
-00:00:02,339 --> 00:00:03,229
-träffas. Jag tycker
+00:00:02,899 --> 00:00:03,930
+Jag tycker att det är viktigt
 
 5
-00:00:03,279 --> 00:00:03,930
-att det är viktigt
-
-6
 00:00:03,980 --> 00:00:04,600
 att vi fortsätter
 
+6
+00:00:04,650 --> 00:00:05,830
+med detta eftersom det betyder
+
 7
-00:00:04,650 --> 00:00:05,500
-med detta eftersom det
+00:00:05,879 --> 00:00:06,500
+mycket för oss.
 
 8
-00:00:05,549 --> 00:00:06,500
-betyder mycket för oss.
-
-9
 00:00:06,700 --> 00:00:07,500
 – När vi är tillsammans
 
-10
+9
 00:00:07,549 --> 00:00:08,330
 så känns allt bättre
 
-11
+10
 00:00:08,380 --> 00:00:08,929
 och vi kan göra
 
-12
+11
 00:00:08,980 --> 00:00:09,699
 mer tillsammans.

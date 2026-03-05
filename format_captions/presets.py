@@ -62,8 +62,9 @@ PRESET_BROADCAST: Dict = {
 # Tuned 2026-03: Penalties increased to reduce weak-word stragglers at block boundaries
 PRESET_SOCIAL: Dict = {
     "max_lines": 1,
-    "max_line_chars": 25,
-    "max_cue_chars": 25,
+    "max_line_chars": 30,          # was 25 — allow flexibility to avoid stragglers
+    "max_cue_chars": 30,            # was 25 — allow flexibility to avoid stragglers
+    "preferred_max_chars": 25,      # NEW — soft limit (prefer staying under)
     "target_line_chars": 18,
     "prefer_split_over": 18,
     "min_line_chars": 6,
@@ -78,19 +79,20 @@ PRESET_SOCIAL: Dict = {
         "len_deviation": 0.15,
         "balance": 0.0,
         "orphan": 3.0,              # was 2.0 — prevent tiny blocks
-        "weak_end": 15.0,           # was 5.0 — strongly avoid weak-word endings
-        "short_end": 2.5,           # was 0.8 — avoid short-word endings
-        "punct_bonus": -4.5,        # was -3.5 — strongly prefer punctuation breaks
+        "weak_end": 35.0,           # was 15.0 — very strong penalty (increased from 25.0)
+        "short_end": 5.0,           # was 2.5 — stronger penalty (increased from 4.0)
+        "punct_bonus": -7.0,        # was -4.5 — stronger bonus for sentence breaks (increased from -6.0)
         "comma_bonus": -2.0,
+        "over_preferred_max": 0.8,  # was 2.5 — weaker penalty to enable flexibility (reduced from 1.0)
         "single_line_long": 3.0,
         "cps_above_target": 1.0,
         "cps_above_max": 4.0,
         "cue_len_deviation": 0.10,
         "cue_dur_below": 1.5,
         "cue_dur_above": 1.0,
-        "boundary_weak_end": 12.0,  # was 4.0 — very high at boundaries
-        "boundary_punct_bonus": -6.0,  # was -4.0 — very strong at boundaries
-        "boundary_no_punct": 2.5,   # was 1.5 — discourage unpunctuated breaks
+        "boundary_weak_end": 28.0,  # was 12.0 — very strong penalty at boundaries (increased from 20.0)
+        "boundary_punct_bonus": -10.0,  # was -6.0 — stronger bonus at boundaries (increased from -8.0)
+        "boundary_no_punct": 3.0,   # was 1.5 — discourage unpunctuated breaks (increased from 2.5)
         "speaker_change_bonus": -4.0,
     }
 }

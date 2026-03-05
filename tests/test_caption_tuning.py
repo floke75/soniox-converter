@@ -106,11 +106,12 @@ class TestSocialMediaCaptionTuning:
         weak_endings = [b for b in blocks if last_word_clean(b["text"]) in WEAK_END_WORDS]
         weak_ratio = len(weak_endings) / len(blocks) * 100
 
-        # Before tuning: 28.9% average across all tests
-        # After tuning: 16.0% average
-        # Allow 20% threshold to account for unavoidable edge cases
-        assert weak_ratio < 20.0, (
-            f"Weak-word straggler rate {weak_ratio:.1f}% exceeds 20% threshold. "
+        # Before Phase 8 tuning: 28.9% average across all tests
+        # After Phase 8 tuning: 16.0% average
+        # After Phase 9 tuning: <10% target
+        # Updated threshold from 20% to 10%
+        assert weak_ratio < 10.0, (
+            f"Weak-word straggler rate {weak_ratio:.1f}% exceeds 10% threshold. "
             f"Found {len(weak_endings)} weak endings in {len(blocks)} blocks. "
             f"This suggests the caption tuning has regressed."
         )
@@ -217,3 +218,27 @@ class TestSocialMediaCaptionTuning:
             f"Overall weak-word straggler rate {overall_ratio:.1f}% exceeds 18% threshold. "
             f"This indicates the caption tuning improvements have regressed."
         )
+
+    def test_allows_longer_captions_to_avoid_stragglers(self):
+        """Verify algorithm goes over 25 chars if it avoids weak-word stragglers."""
+        # Use the weak_words_heavy transcript which has problematic patterns
+        transcript = load_test_transcript("weak_words_heavy")
+        words = transcript_to_caption_words(transcript)
+        srt = format_srt(words, preset="social")
+
+        blocks = parse_srt_blocks(srt)
+
+        # Find blocks that are 26-30 chars (using the flexibility)
+        flexible_blocks = [b for b in blocks if 26 <= len(b["text"]) <= 30]
+
+        # All blocks should stay within hard maximum of 30 chars
+        for block in blocks:
+            assert len(block["text"]) <= 30, \
+                f"Block '{block['text']}' ({len(block['text'])} chars) exceeds hard max of 30"
+
+        # If there are blocks using the 26-30 char flexibility,
+        # verify they don't end with weak words
+        for block in flexible_blocks:
+            last_word = last_word_clean(block["text"])
+            assert last_word not in WEAK_END_WORDS, \
+                f"Block '{block['text']}' ({len(block['text'])} chars) ends with weak word '{last_word}'"

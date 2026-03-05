@@ -1,58 +1,58 @@
 1
-00:00:00,000 --> 00:00:00,590
-Under de senaste
+00:00:00,000 --> 00:00:01,000
+Under de senaste månaderna
 
 2
-00:00:00,640 --> 00:00:01,570
-månaderna har vi arbetat
+00:00:01,050 --> 00:00:02,050
+har vi arbetat intensivt
 
 3
-00:00:01,620 --> 00:00:02,050
-intensivt
-
-4
 00:00:02,100 --> 00:00:02,750
 med att utveckla
 
-5
+4
 00:00:02,799 --> 00:00:03,550
 och förbättra våra
 
-6
+5
 00:00:03,600 --> 00:00:04,530
 processer för att kunna
 
-7
+6
 00:00:04,580 --> 00:00:05,650
 leverera högkvalitativa
 
-8
+7
 00:00:05,700 --> 00:00:06,469
 resultat till alla
 
+8
+00:00:06,519 --> 00:00:07,119
+våra kunder.
+
 9
-00:00:06,519 --> 00:00:07,469
-våra kunder. När vi
+00:00:07,250 --> 00:00:08,069
+När vi reflekterar
 
 10
-00:00:07,519 --> 00:00:08,429
-reflekterar över vår
+00:00:08,119 --> 00:00:09,099
+över vår resa hittills
 
 11
-00:00:08,480 --> 00:00:09,399
-resa hittills så ser
+00:00:09,150 --> 00:00:09,869
+så ser vi tydligt
 
 12
-00:00:09,449 --> 00:00:10,529
-vi tydligt att samarbetet
+00:00:09,919 --> 00:00:11,169
+att samarbetet mellan teamen
 
 13
-00:00:10,580 --> 00:00:11,569
-mellan teamen har varit
+00:00:11,220 --> 00:00:12,099
+har varit avgörande
 
 14
-00:00:11,619 --> 00:00:12,799
-avgörande för framgången
+00:00:12,150 --> 00:00:12,799
+för framgången
 
 15
 00:00:12,849 --> 00:00:13,569
@@ -71,24 +71,24 @@ vi har åstadkommit
 tillsammans.
 
 19
-00:00:15,949 --> 00:00:16,800
-– Framöver kommer vi
+00:00:15,949 --> 00:00:16,399
+– Framöver
 
 20
-00:00:16,850 --> 00:00:17,629
-att fokusera ännu
+00:00:16,449 --> 00:00:17,399
+kommer vi att fokusera
 
 21
-00:00:17,679 --> 00:00:18,550
-mer på innovation
+00:00:17,449 --> 00:00:18,550
+ännu mer på innovation
 
 22
-00:00:18,600 --> 00:00:19,730
-och hållbarhet eftersom
+00:00:18,600 --> 00:00:19,300
+och hållbarhet
 
 23
-00:00:19,780 --> 00:00:20,599
-dessa värderingar
+00:00:19,350 --> 00:00:20,599
+eftersom dessa värderingar
 
 24
 00:00:20,649 --> 00:00:21,449

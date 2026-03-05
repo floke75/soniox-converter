@@ -291,6 +291,11 @@ def _score_single_line(text: str, start: float, end: float, config: Dict) -> flo
     # Length deviation from target
     score += w["len_deviation"] * abs(length - config["target_line_chars"])
 
+    # Penalize exceeding preferred max (soft limit for social)
+    preferred_max = config.get("preferred_max_chars", config["max_line_chars"])
+    if length > preferred_max:
+        score += w.get("over_preferred_max", 0.0) * (length - preferred_max)
+
     # Penalty for long single lines
     if length > config["prefer_split_over"]:
         score += w["single_line_long"] * (length - config["prefer_split_over"])
@@ -320,6 +325,13 @@ def _score_two_lines(
         abs(len1 - config["target_line_chars"]) +
         abs(len2 - config["target_line_chars"])
     )
+
+    # Penalize exceeding preferred max on either line (soft limit)
+    preferred_max = config.get("preferred_max_chars", config["max_line_chars"])
+    if len1 > preferred_max:
+        score += w.get("over_preferred_max", 0.0) * (len1 - preferred_max)
+    if len2 > preferred_max:
+        score += w.get("over_preferred_max", 0.0) * (len2 - preferred_max)
 
     # Balance
     score += w["balance"] * abs(len1 - len2)
@@ -464,7 +476,7 @@ def segment_words(words: List[Word], config: Dict) -> List[Dict[str, Any]]:
             if (j < N and not words[j].is_segment_start
                     and not ends_sentence(seg_text)
                     and not ends_comma(seg_text)):
-                cost += 1.0
+                cost += 2.0  # was 1.0 — stronger penalty for mid-sentence breaks
 
             # Nudge against tiny mid-stream cues
             if (seg_end - seg_start) < config["min_cue_dur"] and j != N:
