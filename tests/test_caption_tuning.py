@@ -94,7 +94,7 @@ class TestSocialMediaCaptionTuning:
     """Regression tests for social media caption quality improvements."""
 
     def test_weak_word_stragglers_below_threshold(self):
-        """Social preset keeps weak-word stragglers below 20% on challenging content."""
+        """Social preset keeps weak-word stragglers below 10% on challenging content."""
         # Use the heavy weak-word test file
         transcript = load_test_transcript("weak_words_heavy")
         words = transcript_to_caption_words(transcript)
