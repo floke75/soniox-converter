@@ -164,7 +164,8 @@ class TestSocialMediaCaptionTuning:
         weak_endings = [b for b in blocks if last_word_clean(b["text"]) in WEAK_END_WORDS]
         weak_ratio = len(weak_endings) / len(blocks) * 100
 
-        # This file went from 33.3% to 20.0% weak-word stragglers
+        # This file went from 33.3% (baseline) to 0.0% (after tuning)
+        # 25% threshold allows some headroom without masking meaningful regressions
         assert weak_ratio < 25.0, (
             f"Mixed complexity weak-word rate {weak_ratio:.1f}% exceeds 25% threshold"
         )
