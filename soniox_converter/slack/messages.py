@@ -76,7 +76,7 @@ FORMAT_OPTIONS = [
 ]
 
 # Formats checked by default
-DEFAULT_FORMATS = {"premiere_pro", "srt_broadcast"}
+DEFAULT_FORMATS = {"premiere_pro", "srt_broadcast", "srt_social"}
 
 # Audio/video extensions accepted (matches config.SONIOX_SUPPORTED_FORMATS)
 SUPPORTED_EXTENSIONS = {
