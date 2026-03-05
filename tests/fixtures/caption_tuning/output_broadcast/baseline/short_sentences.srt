@@ -1,0 +1,17 @@
+1
+00:00:00,000 --> 00:00:01,750
+Hej alla. Jag heter Anna. Vi ses
+
+2
+00:00:01,800 --> 00:00:05,069
+snart. Tack för idag. Det var bra.
+Jag gillar det. Vad tycker du?
+
+3
+00:00:05,250 --> 00:00:08,070
+– Det är fint. Kom hit nu.
+Jag vill ha kaffe. Det funkar bra.
+
+4
+00:00:08,250 --> 00:00:10,219
+Vi är klara. Bra jobbat. Ses imorgon.
