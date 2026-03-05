@@ -83,7 +83,7 @@ PRESET_SOCIAL: Dict = {
         "short_end": 5.0,           # was 0.8 — stronger penalty (increased from 4.0)
         "punct_bonus": -7.0,        # was -3.5 — stronger bonus for sentence breaks (increased from -6.0)
         "comma_bonus": -2.0,
-        "over_preferred_max": 0.8,  # was 2.5 — weaker penalty to enable flexibility (reduced from 1.0)
+        "over_preferred_max": 0.8,  # NEW in Phase 8 as 2.5, reduced through tuning (2.5 → 1.0 → 0.8)
         "single_line_long": 3.0,
         "cps_above_target": 1.0,
         "cps_above_max": 4.0,

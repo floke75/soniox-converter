@@ -66,35 +66,45 @@ TOTAL                                        1               2               3
 ### Strengths
 
 1. **Low Weak-Word Rate (12.5%)** - ACCEPTABLE
-  - Below the 15% threshold
-  - Better than social media preset (16.2%)
-  - Excellent performance on longer sentences (0% on long/medium)
-2. **Excellent Line Balance (5.6 chars)** - GOOD
-  - Well below 10-char threshold
-  - Lines are evenly distributed
-  - Natural reading rhythm
-3. **Natural Sentence Boundaries**
-  - Most breaks occur at sentence/clause boundaries
-  - Good use of punctuation cues
+
+- Below the 15% threshold
+- Better than social media preset (16.2%)
+- Excellent performance on longer sentences (0% on long/medium)
+
+1. **Excellent Line Balance (5.6 chars)** - GOOD
+
+- Well below 10-char threshold
+- Lines are evenly distributed
+- Natural reading rhythm
+
+1. **Natural Sentence Boundaries**
+
+- Most breaks occur at sentence/clause boundaries
+- Good use of punctuation cues
 
 ### Areas for Improvement
 
 1. **Short Sentences Challenge (25% weak-word rate)**
-  - Short, choppy sentences create more stragglers
-  - Example: "Hej alla. Jag heter Anna. Vi ses"
-  - Difficult to optimize when sentences are very brief
-2. **Single-Line Blocks (16.7%)**
-  - Higher than ideal for broadcast format
-  - Examples identified:
-    - "Hej alla. Jag heter Anna. Vi ses" (short_sentences, block 1)
-    - "Vi är klara. Bra jobbat. Ses imorgon." (short_sentences, block 4)
-    - "– Bra. Låt oss börja direkt eftersom" (mixed_complexity, block 4)
-    - "eftersom det betyder mycket för oss." (weak_words_heavy, block 3)
-  - Some are justified (very short content), others could be split
-3. **Specific Weak-Word Cases**
-  - **mixed_complexity, Block 4, Line 1**: "– Bra. Låt oss börja direkt eftersom" → [eftersom]
-  - **short_sentences, Block 2, Line 2**: "Jag gillar det. Vad tycker du?" → [du]
-  - **weak_words_heavy, Block 2, Line 2**: "att vi fortsätter med detta" → [detta]
+
+- Short, choppy sentences create more stragglers
+- Example: "Hej alla. Jag heter Anna. Vi ses"
+- Difficult to optimize when sentences are very brief
+
+1. **Single-Line Blocks (16.7%)**
+
+- Higher than ideal for broadcast format
+- Examples identified:
+  - "Hej alla. Jag heter Anna. Vi ses" (short_sentences, block 1)
+  - "Vi är klara. Bra jobbat. Ses imorgon." (short_sentences, block 4)
+  - "– Bra. Låt oss börja direkt eftersom" (mixed_complexity, block 4)
+  - "eftersom det betyder mycket för oss." (weak_words_heavy, block 3)
+- Some are justified (very short content), others could be split
+
+1. **Specific Weak-Word Cases**
+
+- **mixed_complexity, Block 4, Line 1**: "– Bra. Låt oss börja direkt eftersom" → [eftersom]
+- **short_sentences, Block 2, Line 2**: "Jag gillar det. Vad tycker du?" → [du]
+- **weak_words_heavy, Block 2, Line 2**: "att vi fortsätter med detta" → [detta]
 
 ## Comparison: Broadcast vs Social Media
 

@@ -304,7 +304,8 @@ async def create_transcription(
         Form(
             description=(
                 "Comma-separated output formats. Available: premiere_pro, "
-                "plain_text, kinetic_words, srt_broadcast, srt_social. Defaults to all."
+                "plain_text, kinetic_words, srt_broadcast, srt_social, "
+                "srt_captions (deprecated, use srt_broadcast instead). Defaults to all."
             )
         ),
     ] = None,

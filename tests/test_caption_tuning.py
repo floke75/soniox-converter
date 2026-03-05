@@ -213,9 +213,9 @@ class TestSocialMediaCaptionTuning:
 
         # Before tuning: 28.9% average
         # After tuning: 1.4% average
-        # Allow 18% threshold for overall regression detection
-        assert overall_ratio < 18.0, (
-            f"Overall weak-word straggler rate {overall_ratio:.1f}% exceeds 18% threshold. "
+        # Allow 5% threshold for regression detection
+        assert overall_ratio < 5.0, (
+            f"Overall weak-word straggler rate {overall_ratio:.1f}% exceeds 5% threshold. "
             f"This indicates the caption tuning improvements have regressed."
         )
 
