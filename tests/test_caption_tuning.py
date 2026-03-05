@@ -6,13 +6,13 @@ doesn't regress in future changes.
 
 HOW: Uses real Swedish transcripts with known problematic patterns (heavy use
 of weak words like "för", "att", "och"). Tests verify that:
-1. Weak-word straggler rate stays below 20% (was 28.9% before tuning)
+1. Weak-word straggler rate stays below 5% (was 1.4% after final tuning)
 2. Short-word straggler count is reduced
 3. Unpunctuated boundaries are minimized
 
 RULES:
 - Tests use real transcript data from fixtures/caption_tuning/real_transcripts/
-- Threshold of 20% weak-word stragglers allows some unavoidable edge cases
+- Threshold of 5% weak-word stragglers allows some unavoidable edge cases
 - If these tests fail, investigate before relaxing thresholds
 """
 

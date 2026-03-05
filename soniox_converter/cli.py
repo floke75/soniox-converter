@@ -50,7 +50,7 @@ from soniox_converter.core.context import (
     load_terms,
     resolve_companion_files,
 )
-from soniox_converter.formatters import FORMATTERS
+from soniox_converter.formatters import DEFAULT_FORMATTERS, FORMATTERS
 from soniox_converter.formatters.base import FormatterOutput
 
 
@@ -295,7 +295,7 @@ async def _run_pipeline(args: argparse.Namespace) -> None:
                 )
                 sys.exit(1)
     else:
-        format_keys = list(FORMATTERS.keys())
+        format_keys = DEFAULT_FORMATTERS
 
     # Build language hints
     language_hints: List[str] = [args.language]

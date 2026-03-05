@@ -37,3 +37,14 @@ FORMATTERS: dict[str, type[BaseFormatter]] = {
     "srt_social": SRTSocialFormatter,
     "srt_captions": SRTCaptionFormatter,  # deprecated, generates both
 }
+
+# Default formatters used when no explicit format selection is made.
+# Excludes srt_captions (deprecated) to prevent duplicate SRT file generation,
+# but keeps it available for explicit backwards-compatible requests.
+DEFAULT_FORMATTERS = [
+    "premiere_pro",
+    "plain_text",
+    "kinetic_words",
+    "srt_broadcast",
+    "srt_social",
+]

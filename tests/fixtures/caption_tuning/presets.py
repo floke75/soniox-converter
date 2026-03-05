@@ -54,13 +54,13 @@ PRESET_TUNED_V5["max_lookback_words"] = 12
 # Goal: Reduce stragglers while maintaining reasonable caption lengths
 PRESET_TUNED_FINAL = deepcopy(PRESET_SOCIAL)
 PRESET_TUNED_FINAL["weights"].update({
-    "weak_end": 15.0,              # high but not extreme (was 5.0)
-    "boundary_weak_end": 12.0,     # very high at boundaries (was 4.0)
-    "short_end": 2.5,              # stronger than baseline (was 0.8)
-    "orphan": 3.0,                 # prevent tiny blocks (was 2.0)
-    "boundary_no_punct": 2.5,      # discourage unpunctuated breaks (was 1.5)
-    "punct_bonus": -4.5,           # strongly prefer punctuation breaks (was -3.5)
-    "boundary_punct_bonus": -6.0,  # very strong at boundaries (was -4.0)
+    "weak_end": 15.0,              # lighter than production (35.0) — intermediate tuning iteration
+    "boundary_weak_end": 12.0,     # lighter than production (20.0) — intermediate tuning iteration
+    "short_end": 2.5,              # lighter than production (4.0) — intermediate tuning iteration
+    "orphan": 3.0,                 # lighter than production (5.0) — intermediate tuning iteration
+    "boundary_no_punct": 2.5,      # lighter than production (3.5) — intermediate tuning iteration
+    "punct_bonus": -4.5,           # lighter than production (-8.0) — intermediate tuning iteration
+    "boundary_punct_bonus": -6.0,  # lighter than production (-10.0) — intermediate tuning iteration
 })
 PRESET_TUNED_FINAL["max_lookback_words"] = 10  # was 6
 

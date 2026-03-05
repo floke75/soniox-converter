@@ -12,7 +12,6 @@ and compares different configurations to identify improvements.
 
 USAGE:
     python tests/tools/tune_broadcast_captions.py --preset broadcast
-    python tests/tools/tune_broadcast_captions.py --compare baseline tuned-v1
     python tests/tools/tune_broadcast_captions.py --all
 """
 
