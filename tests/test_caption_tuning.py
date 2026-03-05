@@ -179,8 +179,8 @@ class TestSocialMediaCaptionTuning:
         weak_endings = [b for b in blocks if last_word_clean(b["text"]) in WEAK_END_WORDS]
         weak_ratio = len(weak_endings) / len(blocks) * 100
 
-        # This file went from 34.6% to 11.5% weak-word stragglers
-        # Most dramatic improvement
+        # This file went from 34.6% (baseline) to 0.0% (after final tuning)
+        # Most dramatic improvement — 15% threshold preserves some headroom
         assert weak_ratio < 15.0, (
             f"Long sentences weak-word rate {weak_ratio:.1f}% exceeds 15% threshold"
         )
