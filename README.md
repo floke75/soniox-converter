@@ -46,9 +46,9 @@ overridden via environment variables.
 - The bot posts a compact thread message with a `Transkribera` button
 - Clicking the button opens the modal defined in `soniox_converter/slack/messages.py`
 - Modal defaults:
-  - primary language `sv` via `DEFAULT_PRIMARY_LANGUAGE`
-  - secondary language `en` via `DEFAULT_SECONDARY_LANGUAGE`
-  - diarization enabled via `DEFAULT_DIARIZATION=true`
+  - primary language `sv` (currently hardcoded in `soniox_converter/slack/messages.py`)
+  - secondary language `en` (currently hardcoded in `soniox_converter/slack/messages.py`)
+  - diarization enabled (currently hardcoded in `soniox_converter/slack/messages.py`)
   - `premiere_pro`, `srt_broadcast`, and `srt_social` preselected
 - Legacy Block Kit form handlers remain registered only for compatibility with
   older interactive payloads
@@ -107,8 +107,9 @@ export CONVERTER_API_URL=http://localhost:8000
 
 - `SONIOX_BASE_URL` and `SONIOX_MODEL` override the upstream Soniox API target.
 - `DEFAULT_PRIMARY_LANGUAGE`, `DEFAULT_SECONDARY_LANGUAGE`, and
-  `DEFAULT_DIARIZATION` control the CLI/API/Slack smart defaults sourced from
-  `soniox_converter/config.py`.
+  `DEFAULT_DIARIZATION` control the CLI and HTTP API smart defaults sourced from
+  `soniox_converter/config.py`; Slack modal defaults are currently hardcoded in
+  `soniox_converter/slack/messages.py`.
 - `CONVERTER_API_URL` controls how the Slack bot reaches the HTTP API when they
   do not share the same host/port.
 
