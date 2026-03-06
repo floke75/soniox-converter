@@ -119,7 +119,9 @@ ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
   (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
   sleep 1 && \
   nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
-  nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &'
+  nohup soniox-slack > /var/log/soniox-slack.log 2>&1 & \
+  sleep 2 && \
+  ps aux | grep -E "(soniox-api|soniox-slack)" | grep -v grep'
 ```
 
 ### Verify Deployment
