@@ -22,10 +22,13 @@ agents. Prefer explicit defaults, traceable invariants, and runnable commands.
 
 ## Interface defaults that matter
 
+Most runtime defaults come from `soniox_converter/config.py` and can be
+overridden via environment variables.
+
 ### CLI and HTTP API
 
-- Primary language defaults to `sv`
-- Diarization defaults to enabled
+- Primary language defaults to `sv` via `DEFAULT_PRIMARY_LANGUAGE`
+- Diarization defaults to enabled via `DEFAULT_DIARIZATION=true`
 - If `output_formats` is omitted, the app uses `DEFAULT_FORMATTERS` from
   `soniox_converter/formatters/__init__.py`
 - Current `DEFAULT_FORMATTERS` value:
@@ -43,9 +46,9 @@ agents. Prefer explicit defaults, traceable invariants, and runnable commands.
 - The bot posts a compact thread message with a `Transkribera` button
 - Clicking the button opens the modal defined in `soniox_converter/slack/messages.py`
 - Modal defaults:
-  - primary language `sv`
-  - secondary language `en`
-  - diarization enabled
+  - primary language `sv` via `DEFAULT_PRIMARY_LANGUAGE`
+  - secondary language `en` via `DEFAULT_SECONDARY_LANGUAGE`
+  - diarization enabled via `DEFAULT_DIARIZATION=true`
   - `premiere_pro`, `srt_broadcast`, and `srt_social` preselected
 - Legacy Block Kit form handlers remain registered only for compatibility with
   older interactive payloads
@@ -90,6 +93,24 @@ Add these when using Slack:
 export SLACK_BOT_TOKEN=xoxb-...
 export SLACK_APP_TOKEN=xapp-...
 ```
+
+### Optional environment overrides
+
+```bash
+export SONIOX_BASE_URL=https://api.soniox.com/v1
+export SONIOX_MODEL=stt-async-v4
+export DEFAULT_PRIMARY_LANGUAGE=sv
+export DEFAULT_SECONDARY_LANGUAGE=en
+export DEFAULT_DIARIZATION=true
+export CONVERTER_API_URL=http://localhost:8000
+```
+
+- `SONIOX_BASE_URL` and `SONIOX_MODEL` override the upstream Soniox API target.
+- `DEFAULT_PRIMARY_LANGUAGE`, `DEFAULT_SECONDARY_LANGUAGE`, and
+  `DEFAULT_DIARIZATION` control the CLI/API/Slack smart defaults sourced from
+  `soniox_converter/config.py`.
+- `CONVERTER_API_URL` controls how the Slack bot reaches the HTTP API when they
+  do not share the same host/port.
 
 ### Run the CLI
 
@@ -179,6 +200,7 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for the operator runbook.
 If you are changing behavior, start here:
 
 - `soniox_converter/cli.py` — CLI entry point and default output behavior
+- `soniox_converter/config.py` — env var defaults, language map, and supported file formats
 - `soniox_converter/server/app.py` — HTTP API contract and multipart form parsing
 - `soniox_converter/server/models.py` — request/response docs surfaced via OpenAPI
 - `soniox_converter/slack/bot.py` — Slack event handling and API handoff
