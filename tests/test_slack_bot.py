@@ -217,6 +217,7 @@ class TestBuildTranscriptionForm:
         assert "premiere_pro" in initial_values
         assert "srt_broadcast" in initial_values
         assert "srt_social" in initial_values
+        assert "srt_captions" not in initial_values
 
     def test_transcribe_button_has_file_id(self):
         blocks = build_transcription_form("test.mp3", "F_ABC123")
@@ -964,6 +965,8 @@ class TestBuildTranscriptionModal:
         initial_values = {opt["value"] for opt in element["initial_options"]}
         assert "premiere_pro" in initial_values
         assert "srt_broadcast" in initial_values
+        assert "srt_social" in initial_values
+        assert "srt_captions" not in initial_values
 
     def test_has_terms_input(self):
         view = build_transcription_modal("test.mp3", "F12345", "C123", "111.000")

@@ -166,9 +166,12 @@ detailed historical analysis.
 ### Example tuning (if needed)
 
 ```python
+from copy import deepcopy
 from format_captions.presets import PRESET_BROADCAST
 
-PRESET_BROADCAST["weights"].update({
+custom_preset = deepcopy(PRESET_BROADCAST)
+
+custom_preset["weights"].update({
     "weak_end": 10.0,              # was 8.0 - stronger penalty
     "boundary_weak_end": 5.0,      # was 4.0 - stronger at boundaries
     "short_end": 2.0,              # was 1.5 - avoid short endings
