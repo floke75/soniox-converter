@@ -1,16 +1,18 @@
-"""Slack bot: Socket Mode event handlers, Block Kit actions, and polling loop.
+"""Slack bot: Socket Mode event handlers, modal workflow, and polling loop.
 
 WHY: Users in Slack need to upload audio/video files and get transcriptions
 delivered back in-thread. This module is the glue between Slack events and
-the local FastAPI transcription API — it listens for file uploads, presents
-a configuration form, submits jobs, polls for completion, and delivers
-output files.
+the local FastAPI transcription API — it listens for file uploads, posts a
+compact in-thread button, opens a transcription modal, submits jobs, polls
+for completion, and delivers output files.
 
 HOW: Uses slack-bolt with Socket Mode (no public URL needed). Event
-handlers react to file_shared events, action handlers process Block Kit
-form submissions. After submission, an async polling loop tracks job
-progress and edits the Slack message with status updates. On completion
-the bot uploads output files to the thread.
+handlers react to file_shared events, action handlers process the modal
+workflow, and a small set of legacy Block Kit handlers remain registered so
+older interactive payloads can still be acknowledged safely. After
+submission, an async polling loop tracks job progress and edits the Slack
+message with status updates. On completion the bot uploads output files to
+the thread.
 
 RULES:
 - All Slack actions must be ack()'d within 3 seconds
@@ -49,12 +51,12 @@ from soniox_converter.slack.messages import (
     ACTION_PRIMARY_LANG,
     ACTION_SECONDARY_LANG,
     ACTION_TRANSCRIBE,
+    DEFAULT_FORMATS,
     MODAL_CALLBACK_ID,
     build_error_blocks,
     build_open_modal_message,
     build_progress_blocks,
     build_summary_blocks,
-    build_transcription_form,
     build_transcription_modal,
     is_supported_file,
 )
@@ -106,6 +108,10 @@ def create_app(bot_token: Optional[str] = None) -> App:
 
     # Register handlers
     app.event("file_shared")(handle_file_shared)
+
+    # Legacy Block Kit compatibility handlers.
+    # The active runtime path is button -> modal, but older interactive
+    # messages may still exist in Slack threads for a while.
     app.action(ACTION_PRIMARY_LANG)(handle_language_select)
     app.action(ACTION_SECONDARY_LANG)(handle_language_select)
     app.action(ACTION_DIARIZATION)(handle_diarization_toggle)
@@ -189,7 +195,7 @@ def handle_file_shared(event: Dict[str, Any], client: Any, logger: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Action handlers (Block Kit interactions)
+# Action handlers (legacy Block Kit compatibility)
 # ---------------------------------------------------------------------------
 
 
@@ -272,7 +278,7 @@ def _extract_form_config(body: Dict[str, Any]) -> Dict[str, Any]:
     primary_language = "sv"
     secondary_language = "en"  # type: Optional[str]
     diarization = True
-    output_formats = ["premiere_pro", "srt_captions"]
+    output_formats = list(DEFAULT_FORMATS)
 
     for block_values in state_values.values():
         for action_id, action_data in block_values.items():
@@ -470,7 +476,7 @@ def _extract_modal_config(values: Dict[str, Any]) -> Dict[str, Any]:
     ).get("selected_options", [])
     output_formats = [opt.get("value", "") for opt in format_opts if opt.get("value")]
     if not output_formats:
-        output_formats = ["premiere_pro", "srt_captions"]
+        output_formats = list(DEFAULT_FORMATS)
 
     return {
         "primary_language": primary_language,
@@ -605,7 +611,6 @@ def _run_transcription_pipeline(
 
     except Exception as exc:
         logger.exception("Transcription pipeline error")
-        elapsed = time.time() - start_time
         _post_error(
             client, channel, thread_ts,
             "file", "Unexpected error: {}".format(str(exc)),

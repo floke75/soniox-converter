@@ -305,7 +305,9 @@ async def create_transcription(
             description=(
                 "Comma-separated output formats. Available: premiere_pro, "
                 "plain_text, kinetic_words, srt_broadcast, srt_social, "
-                "srt_captions (deprecated, use srt_broadcast and srt_social instead). Defaults to all."
+                "srt_captions (deprecated, use srt_broadcast and srt_social instead). "
+                "Defaults to DEFAULT_FORMATTERS: premiere_pro, plain_text, kinetic_words, "
+                "srt_broadcast, srt_social."
             )
         ),
     ] = None,

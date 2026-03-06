@@ -1,214 +1,227 @@
 # soniox-converter
 
-Converts Soniox ASR transcripts to various caption formats optimized for different platforms.
+## Goal
 
-## Features
+`soniox-converter` turns Soniox async transcription output into editor-facing
+deliverables and exposes the same pipeline through three entry points:
 
-- **Multiple Format Support:** Premiere Pro, SRT (broadcast/social), Kinetic Words, Plain Text
-- **Optimized Caption Quality:** 1.4% weak-word rate for social media, 12.5% for broadcast
-- **Platform-Specific Formatting:**
-  - Social Media (9:16): Single-line, 30 chars max, optimized for TikTok/Instagram
-  - Broadcast (16:9): Two-line, 42 chars/line, traditional TV subtitles
-- **HTTP API & Slack Bot:** Easy integration via REST API or Slack
-- **Context-Aware Translations:** Support for terms and context in transcription
+- CLI for local operator workflows
+- FastAPI for service-to-service use
+- Slack Socket Mode bot for in-thread transcription delivery
 
-## Quick Start
+The codebase is intentionally documented for human maintainers and LLM coding
+agents. Prefer explicit defaults, traceable invariants, and runnable commands.
 
-### Installation
+## What the system currently does
+
+- Transcribes supported audio/video files with Soniox
+- Produces multiple output formats from the same transcript IR
+- Accepts optional context via script text, terms, and general key/value hints
+- Exposes an HTTP API with OpenAPI docs at `/docs`
+- Runs a Slack modal workflow: upload file -> click button -> configure in modal -> receive files in thread
+
+## Interface defaults that matter
+
+Most runtime defaults come from `soniox_converter/config.py` and can be
+overridden via environment variables.
+
+### CLI and HTTP API
+
+- Primary language defaults to `sv` via `DEFAULT_PRIMARY_LANGUAGE`
+- Diarization defaults to enabled via `DEFAULT_DIARIZATION=true`
+- If `output_formats` is omitted, the app uses `DEFAULT_FORMATTERS` from
+  `soniox_converter/formatters/__init__.py`
+- Current `DEFAULT_FORMATTERS` value:
+  - `premiere_pro`
+  - `plain_text`
+  - `kinetic_words`
+  - `srt_broadcast`
+  - `srt_social`
+- Deprecated `srt_captions` is still accepted when explicitly requested, but it
+  generates both split SRT outputs and is not part of the default set
+
+### Slack bot
+
+- Active UX is modal-first, not the older in-channel configuration form
+- The bot posts a compact thread message with a `Transkribera` button
+- Clicking the button opens the modal defined in `soniox_converter/slack/messages.py`
+- Modal defaults:
+  - primary language `sv` (currently hardcoded in `soniox_converter/slack/messages.py`)
+  - secondary language `en` (currently hardcoded in `soniox_converter/slack/messages.py`)
+  - diarization enabled (currently hardcoded in `soniox_converter/slack/messages.py`)
+  - `premiere_pro`, `srt_broadcast`, and `srt_social` preselected
+- Legacy Block Kit form handlers remain registered only for compatibility with
+  older interactive payloads
+
+### Context handling
+
+- Context is assembled in `soniox_converter/core/context.py`
+- Supported inputs:
+  - script text from `.txt` companion file or API upload
+  - terms list
+  - general context key/value pairs
+- Total context payload is limited to 10,000 characters
+
+## Available formats
+
+| Format | Purpose | Output |
+| --- | --- | --- |
+| `premiere_pro` | Premiere Pro transcript JSON | `-transcript.json` |
+| `plain_text` | Plain text transcript | `-transcript.txt` |
+| `kinetic_words` | Word-timed kinetic reveal SRTs | `-kinetic-row1.srt`, `-kinetic-row2.srt`, `-kinetic-row3.srt` |
+| `srt_broadcast` | 16:9 / 2-line subtitle output | `-broadcast.srt` |
+| `srt_social` | 9:16 / 1-line subtitle output | `-social.srt` |
+| `srt_captions` | Deprecated compatibility key; generates both split SRT outputs | `-broadcast.srt` + `-social.srt` |
+
+## Quick start
+
+### Install
 
 ```bash
 pip install -e .
 ```
 
-### Usage
+### Required environment
 
-**CLI:**
 ```bash
-# Convert to all formats (create output dir if needed)
-mkdir -p ./output/ && python -m soniox_converter input.wav --output-dir ./output/
-
-# Specific formats only
-python -m soniox_converter input.wav --output-dir ./output/ --formats srt_social,srt_broadcast
+export SONIOX_API_KEY=your_api_key_here
 ```
 
-**API Server:**
+Add these when using Slack:
+
+```bash
+export SLACK_BOT_TOKEN=xoxb-...
+export SLACK_APP_TOKEN=xapp-...
+```
+
+### Optional environment overrides
+
+```bash
+export SONIOX_BASE_URL=https://api.soniox.com/v1
+export SONIOX_MODEL=stt-async-v4
+export DEFAULT_PRIMARY_LANGUAGE=sv
+export DEFAULT_SECONDARY_LANGUAGE=en
+export DEFAULT_DIARIZATION=true
+export CONVERTER_API_URL=http://localhost:8000
+```
+
+- `SONIOX_BASE_URL` and `SONIOX_MODEL` override the upstream Soniox API target.
+- `DEFAULT_PRIMARY_LANGUAGE`, `DEFAULT_SECONDARY_LANGUAGE`, and
+  `DEFAULT_DIARIZATION` control the CLI and HTTP API smart defaults sourced from
+  `soniox_converter/config.py`; Slack modal defaults are currently hardcoded in
+  `soniox_converter/slack/messages.py`.
+- `CONVERTER_API_URL` controls how the Slack bot reaches the HTTP API when they
+  do not share the same host/port.
+
+### Run the CLI
+
+```bash
+mkdir -p ./output
+python -m soniox_converter input.wav --output-dir ./output
+python -m soniox_converter input.wav --output-dir ./output --formats srt_social,srt_broadcast
+```
+
+### Run the HTTP API
+
 ```bash
 soniox-api
-# Opens on http://localhost:8000
-# Docs at http://localhost:8000/docs
 ```
 
-**Slack Bot:**
+- Base URL: `http://localhost:8000`
+- OpenAPI docs: `http://localhost:8000/docs`
+
+Minimal submission example:
+
+```bash
+curl -X POST http://localhost:8000/transcriptions \
+  -F "file=@input.wav" \
+  -F "output_formats=premiere_pro,srt_broadcast"
+```
+
+### Run the Slack bot
+
 ```bash
 soniox-slack
-# Configure with Slack tokens in environment
 ```
 
-## Available Formats
+## Caption quality guidance
 
-| Format | Description | Output File |
-|--------|-------------|-------------|
-| `premiere_pro` | Premiere Pro Audio Transcript JSON | `-transcript.json` |
-| `plain_text` | Plain text transcript | `-transcript.txt` |
-| `kinetic_words` | Word-by-word with timing | `-kinetic-row1.srt`, `-kinetic-row2.srt`, `-kinetic-row3.srt` |
-| `srt_broadcast` | SRT for 16:9 video (2-line) | `-broadcast.srt` |
-| `srt_social` | SRT for 9:16 video (1-line) | `-social.srt` |
-| `srt_captions` | ⚠️ Deprecated: Use split formats | `-broadcast.srt` + `-social.srt` |
+Do not treat historical percentages in old notes or review comments as product
+guarantees. Use the current tests and tuning tools as the source of truth.
 
-**Note:** When no formats specified, all formats except deprecated `srt_captions` are generated by default.
+- Social-media regression suite (`tests/test_caption_tuning.py`) currently enforces:
+  - hard case below 10% weak-word endings
+  - overall corpus below 5%
+  - hard max 30 characters per social caption block
+- Broadcast quality is evaluated heuristically with
+  `tests/tools/tune_broadcast_captions.py`
+  - weak-word rate, line balance, single-line usage, and punctuation behavior
+  - reported numbers are measurements of the current corpus, not API-level SLAs
 
-## Caption Quality
+## Development and verification
 
-### Social Media (9:16)
-- **Weak-word straggler rate:** 1.4% (excellent)
-- **Format:** 1 line, max 30 characters
-- **Optimized for:** TikTok, Instagram Stories, YouTube Shorts
-- **Test threshold:** 5% for regression detection
-
-### Broadcast (16:9)
-- **Weak-word straggler rate:** 12.5% (acceptable)
-- **Format:** 2 lines, max 42 characters per line
-- **Line balance:** 5.6 chars average difference
-- **Optimized for:** Traditional TV, streaming platforms, YouTube
-
-## Development
-
-### Testing
+### Primary checks
 
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Caption tuning tests only
-pytest tests/test_caption_tuning.py -v
-
-# Evaluate caption quality
-python3 tests/tools/tune_social_captions.py --preset baseline
-python3 tests/tools/tune_broadcast_captions.py --preset baseline
+python3 -m pytest tests/test_api.py -v --tb=short
+python3 -m pytest tests/test_slack_bot.py -v --tb=short
+python3 -m pytest tests/test_caption_tuning.py -v --tb=short
+python3 -m pytest tests/ -v --tb=short
+python3 -c "from soniox_converter.server.app import app; print(app.title)"
 ```
 
-### Caption Tuning
-
-Tools for evaluating and tuning caption quality:
+### Caption tuning tools
 
 ```bash
-# Social media format evaluation
 python3 tests/tools/tune_social_captions.py --all
-
-# Broadcast format evaluation
-python3 tests/tools/tune_broadcast_captions.py --all
-
-# Compare presets
 python3 tests/tools/tune_social_captions.py --compare baseline final
+python3 tests/tools/tune_broadcast_captions.py --all
 ```
 
-See `tests/tools/README_BROADCAST_TUNING.md` for detailed tuning documentation.
+See `tests/tools/README_BROADCAST_TUNING.md` for broadcast-tuning heuristics.
 
-## Deployment
+## Deployment model
 
-**Production Server:** Set `SONIOX_SERVER` environment variable to your production server IP (e.g., DigitalOcean droplet)
+The repository currently supports two runtime shapes:
 
-### Quick Deploy
+1. Direct Python entry points (`soniox-api`, `soniox-slack`)
+2. A single container that runs both processes under `supervisord`
 
-```bash
-# From local machine (after PR merged to main)
-# Note: Set SONIOX_SERVER environment variable to your production server IP
-ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
-  git pull origin main && \
-  pip3 install -e . && \
-  (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
-  sleep 1 && \
-  nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
-  nohup soniox-slack > /var/log/soniox-slack.log 2>&1 & \
-  sleep 2 && \
-  ps aux | grep -E "(soniox-api|soniox-slack)" | grep -v grep'
+What is in the repo today:
+
+- `Dockerfile` builds and tests the project, then runs both services in one container
+- `supervisord.conf` starts and auto-restarts `soniox-api` and `soniox-slack`
+- `docker-compose.yml` is a local convenience wrapper that builds the image,
+  publishes port `8000`, and loads `.env`
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the operator runbook.
+
+## LLM agent map
+
+If you are changing behavior, start here:
+
+- `soniox_converter/cli.py` — CLI entry point and default output behavior
+- `soniox_converter/config.py` — env var defaults, language map, and supported file formats
+- `soniox_converter/server/app.py` — HTTP API contract and multipart form parsing
+- `soniox_converter/server/models.py` — request/response docs surfaced via OpenAPI
+- `soniox_converter/slack/bot.py` — Slack event handling and API handoff
+- `soniox_converter/slack/messages.py` — modal layout, labels, and Slack defaults
+- `soniox_converter/core/context.py` — context assembly and size limits
+- `soniox_converter/formatters/__init__.py` — formatter registry and `DEFAULT_FORMATTERS`
+- `format_captions/presets.py` — caption heuristics and tuning comments
+
+## High-level architecture
+
+```text
+Slack / CLI / HTTP client
+        -> soniox_converter.server.app or soniox_converter.cli
+        -> Soniox async transcription
+        -> transcript assembly / context handling
+        -> formatter registry
+        -> editor-facing outputs
 ```
-
-### Verify Deployment
-
-```bash
-curl http://$SONIOX_SERVER:8000/health
-# Should return: {"status":"ok","version":"0.1.0"}
-```
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment procedures, troubleshooting, and rollback steps.
-
-## Architecture
-
-```
-soniox_converter/
-├── adapters/        # Bridges internal representation to format_captions
-├── api/             # Soniox API client
-├── cli.py           # Command-line interface
-├── config.py        # Environment variable defaults and language mapping
-├── core/            # Core conversion logic (assembler, IR, context)
-├── formatters/      # Output format implementations
-│   ├── premiere_pro.py
-│   ├── plain_text.py
-│   ├── kinetic_words.py
-│   └── srt_captions.py  # Broadcast and social formatters
-├── gui.py           # GUI entry point
-├── server/          # FastAPI HTTP server
-└── slack/           # Slack bot integration
-
-format_captions.py   # Standalone caption formatting script
-format_captions/     # Caption formatting library
-├── __init__.py
-├── __main__.py      # python -m format_captions entry point
-├── cli.py           # CLI for caption formatting
-├── core.py          # Dynamic programming algorithm
-├── presets.py       # Format-specific configurations
-└── models.py        # Data models
-```
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# Soniox API Configuration
-SONIOX_API_KEY=your_api_key_here
-SONIOX_BASE_URL=https://api.soniox.com/v1  # Soniox API base URL
-SONIOX_MODEL=stt-async-v4                  # Transcription model
-
-# Language Defaults
-DEFAULT_PRIMARY_LANGUAGE=sv                 # Primary language (ISO 639-1)
-DEFAULT_SECONDARY_LANGUAGE=en               # Secondary language for fallback
-DEFAULT_DIARIZATION=true                    # Enable speaker diarization
-
-# Slack Bot (if using)
-SLACK_BOT_TOKEN=xoxb-...
-SLACK_APP_TOKEN=xapp-...
-```
-
-## Contributing
-
-### Code Review
-
-PRs are reviewed by:
-- **Greptile:** Automated code review (documentation accuracy critical)
-- **Codex:** Functional bug detection
-
-**Important:** This is an LLM-optimized codebase. Documentation accuracy is HIGH PRIORITY.
-- All "was X" comments must match git history exactly
-- Docstrings must reflect actual values (thresholds, char limits, etc.)
-- Usage examples in docstrings must be implementable
-
-### Commit Guidelines
-
-All commits must pass tests:
-```bash
-pytest tests/ -v --tb=short
-```
-
-Caption tuning regression threshold: 5% weak-word rate.
-
-## License
-
-[License information to be added]
 
 ## Support
 
-- **Issues:** https://github.com/floke75/soniox-converter/issues
-- **Server:** $SONIOX_SERVER:8000 (set environment variable to your production server IP)
-- **Health:** http://$SONIOX_SERVER:8000/health
+- Issues: https://github.com/floke75/soniox-converter/issues
+- API health endpoint: `GET /health`
