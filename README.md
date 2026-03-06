@@ -25,10 +25,10 @@ pip install -e .
 **CLI:**
 ```bash
 # Convert to all formats
-soniox-convert --audio input.wav --output ./output/
+python -m soniox_converter input.wav --output-dir ./output/
 
 # Specific formats only
-soniox-convert --audio input.wav --output ./output/ --formats srt_social,srt_broadcast
+python -m soniox_converter input.wav --output-dir ./output/ --formats srt_social,srt_broadcast
 ```
 
 **API Server:**
@@ -48,9 +48,9 @@ soniox-slack
 
 | Format | Description | Output File |
 |--------|-------------|-------------|
-| `premiere_pro` | Adobe Premiere Pro markers | `-premiere.txt` |
+| `premiere_pro` | Adobe Premiere Pro markers | `-transcript.json` |
 | `plain_text` | Plain text transcript | `-transcript.txt` |
-| `kinetic_words` | Word-by-word with timing | `-kinetic.json` |
+| `kinetic_words` | Word-by-word with timing | `-kinetic-row1.srt`, `-kinetic-row2.srt`, `-kinetic-row3.srt` |
 | `srt_broadcast` | SRT for 16:9 video (2-line) | `-broadcast.srt` |
 | `srt_social` | SRT for 9:16 video (1-line) | `-social.srt` |
 | `srt_captions` | ⚠️ Deprecated: Use split formats | `-broadcast.srt` + `-social.srt` |
@@ -162,8 +162,7 @@ SLACK_BOT_TOKEN=xoxb-...
 SLACK_APP_TOKEN=xapp-...
 
 # Optional
-SONIOX_MODEL=sv_se  # Default Swedish model
-PORT=8000           # API server port
+SONIOX_MODEL=stt-async-v4  # Default model
 ```
 
 ## Contributing

@@ -189,7 +189,7 @@ After tuning caption algorithms:
 ### New Format Added
 When adding new output formatters:
 1. Deploy normally
-2. Test with: `curl -X POST http://165.227.150.233:8000/convert -F "audio=@test.wav"`
+2. Test with: `curl -X POST http://165.227.150.233:8000/transcriptions -F "file=@test.wav"`
 3. Verify new format in output_files list
 
 ### Breaking API Changes
