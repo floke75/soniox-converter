@@ -51,6 +51,7 @@ from soniox_converter.slack.messages import (
     ACTION_PRIMARY_LANG,
     ACTION_SECONDARY_LANG,
     ACTION_TRANSCRIBE,
+    DEFAULT_FORMATS,
     MODAL_CALLBACK_ID,
     build_error_blocks,
     build_open_modal_message,
@@ -277,7 +278,7 @@ def _extract_form_config(body: Dict[str, Any]) -> Dict[str, Any]:
     primary_language = "sv"
     secondary_language = "en"  # type: Optional[str]
     diarization = True
-    output_formats = ["premiere_pro", "srt_broadcast", "srt_social"]
+    output_formats = list(DEFAULT_FORMATS)
 
     for block_values in state_values.values():
         for action_id, action_data in block_values.items():
@@ -475,7 +476,7 @@ def _extract_modal_config(values: Dict[str, Any]) -> Dict[str, Any]:
     ).get("selected_options", [])
     output_formats = [opt.get("value", "") for opt in format_opts if opt.get("value")]
     if not output_formats:
-        output_formats = ["premiere_pro", "srt_broadcast", "srt_social"]
+        output_formats = list(DEFAULT_FORMATS)
 
     return {
         "primary_language": primary_language,

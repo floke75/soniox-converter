@@ -36,6 +36,7 @@ from soniox_converter.slack.messages import (
     ACTION_PRIMARY_LANG,
     ACTION_SECONDARY_LANG,
     ACTION_TRANSCRIBE,
+    DEFAULT_FORMATS,
     MODAL_CALLBACK_ID,
     build_error_blocks,
     build_open_modal_message,
@@ -491,7 +492,7 @@ class TestExtractFormConfig:
         assert config["primary_language"] == "sv"
         assert config["secondary_language"] == "en"
         assert config["diarization"] is True
-        assert config["output_formats"] == ["premiere_pro", "srt_broadcast", "srt_social"]
+        assert config["output_formats"] == list(DEFAULT_FORMATS)
 
     def test_extracts_primary_language(self):
         body = {
@@ -1122,7 +1123,7 @@ class TestHandleModalSubmit:
     ):
         import json
         if formats is None:
-            formats = ["premiere_pro", "srt_captions"]
+            formats = list(DEFAULT_FORMATS)
 
         diar_selected = [{"value": "enabled"}] if diarization else []
         format_selected = [
@@ -1351,7 +1352,7 @@ class TestExtractModalConfig:
         assert config["primary_language"] == "sv"
         assert config["secondary_language"] is None
         assert config["diarization"] is False
-        assert config["output_formats"] == ["premiere_pro", "srt_broadcast", "srt_social"]
+        assert config["output_formats"] == list(DEFAULT_FORMATS)
 
     def test_extracts_all_values(self):
         values = {

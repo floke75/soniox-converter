@@ -75,8 +75,8 @@ FORMAT_OPTIONS = [
     ("kinetic_words", "Kinetic Words"),
 ]
 
-# Formats checked by default
-DEFAULT_FORMATS = {"premiere_pro", "srt_broadcast", "srt_social"}
+# Formats checked by default (ordered for deterministic Slack payloads/fallbacks)
+DEFAULT_FORMATS = ("premiere_pro", "srt_broadcast", "srt_social")
 
 # Audio/video extensions accepted (matches config.SONIOX_SUPPORTED_FORMATS)
 SUPPORTED_EXTENSIONS = {
