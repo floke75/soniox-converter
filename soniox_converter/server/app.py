@@ -31,7 +31,7 @@ from typing import Annotated, List, Optional
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from soniox_converter.config import DEFAULT_SECONDARY_LANGUAGE, SONIOX_SUPPORTED_FORMATS
+from soniox_converter.config import DEFAULT_DIARIZATION, DEFAULT_SECONDARY_LANGUAGE, SONIOX_SUPPORTED_FORMATS
 from soniox_converter.core.context import build_context
 from soniox_converter.formatters import DEFAULT_FORMATTERS, FORMATTERS
 from soniox_converter.server.jobs import Job, JobStatus, JobStore
@@ -298,7 +298,7 @@ async def create_transcription(
     diarization: Annotated[
         bool,
         Form(description="Enable speaker diarization."),
-    ] = True,
+    ] = DEFAULT_DIARIZATION,
     output_formats: Annotated[
         Optional[str],
         Form(

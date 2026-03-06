@@ -135,17 +135,25 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment procedures, trouble
 
 ```
 soniox_converter/
-├── server/          # FastAPI HTTP server
-├── slack/           # Slack bot integration
+├── adapters/        # Bridges internal representation to format_captions
+├── api/             # Soniox API client
 ├── cli.py           # Command-line interface
+├── config.py        # Environment variable defaults and language mapping
+├── core/            # Core conversion logic (assembler, IR, context)
 ├── formatters/      # Output format implementations
 │   ├── premiere_pro.py
 │   ├── plain_text.py
 │   ├── kinetic_words.py
 │   └── srt_captions.py  # Broadcast and social formatters
-└── core/            # Core conversion logic
+├── gui.py           # GUI entry point
+├── server/          # FastAPI HTTP server
+└── slack/           # Slack bot integration
 
+format_captions.py   # Standalone caption formatting script
 format_captions/     # Caption formatting library
+├── __init__.py
+├── __main__.py      # python -m format_captions entry point
+├── cli.py           # CLI for caption formatting
 ├── core.py          # Dynamic programming algorithm
 ├── presets.py       # Format-specific configurations
 └── models.py        # Data models
