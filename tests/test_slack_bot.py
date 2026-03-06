@@ -1351,6 +1351,8 @@ class TestExtractModalConfig:
     """Tests for extracting config from modal state values."""
 
     def test_defaults_when_empty(self):
+        # This covers the absent-key fallback path, not the modal builder's
+        # configured default selections sent by Slack on a real submission.
         config = _extract_modal_config({})
         assert config["primary_language"] == "sv"
         assert config["secondary_language"] is None

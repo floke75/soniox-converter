@@ -611,7 +611,6 @@ def _run_transcription_pipeline(
 
     except Exception as exc:
         logger.exception("Transcription pipeline error")
-        elapsed = time.time() - start_time
         _post_error(
             client, channel, thread_ts,
             "file", "Unexpected error: {}".format(str(exc)),
