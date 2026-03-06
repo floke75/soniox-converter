@@ -31,7 +31,7 @@ from typing import Annotated, List, Optional
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from soniox_converter.config import DEFAULT_DIARIZATION, DEFAULT_SECONDARY_LANGUAGE, SONIOX_SUPPORTED_FORMATS
+from soniox_converter.config import DEFAULT_DIARIZATION, DEFAULT_PRIMARY_LANGUAGE, DEFAULT_SECONDARY_LANGUAGE, SONIOX_SUPPORTED_FORMATS
 from soniox_converter.core.context import build_context
 from soniox_converter.formatters import DEFAULT_FORMATTERS, FORMATTERS
 from soniox_converter.server.jobs import Job, JobStatus, JobStore
@@ -290,7 +290,7 @@ async def create_transcription(
     primary_language: Annotated[
         str,
         Form(description="Primary language ISO 639-1 code (e.g. 'sv', 'en')."),
-    ] = "sv",
+    ] = DEFAULT_PRIMARY_LANGUAGE,
     secondary_language: Annotated[
         Optional[str],
         Form(description="Secondary language ISO 639-1 code for code-switching."),
