@@ -79,7 +79,7 @@ FORMAT_OPTIONS = [
 # Intentionally narrower than soniox_converter.formatters.DEFAULT_FORMATTERS:
 # Slack preselects the three thread-friendly file outputs, while plain_text and
 # kinetic_words remain available but unchecked in the modal.
-DEFAULT_FORMATS = ("premiere_pro", "srt_broadcast", "srt_social")
+DEFAULT_FORMATS: tuple[str, ...] = ("premiere_pro", "srt_broadcast", "srt_social")
 
 # Audio/video extensions accepted (matches config.SONIOX_SUPPORTED_FORMATS)
 SUPPORTED_EXTENSIONS = {

@@ -180,6 +180,11 @@ nohup soniox-api > /var/log/soniox-api.log 2>&1 &
 nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &
 ```
 
+Note: `git checkout <known-good-commit>` leaves the repo in detached HEAD
+state. After validating the rollback, either return to a named branch (for
+example `git checkout main`) or use `git revert <bad-commit>` instead if you
+need the checkout to stay on a tracking branch throughout the rollback.
+
 ### Container rollback
 
 ```bash
