@@ -106,15 +106,16 @@ See `tests/tools/README_BROADCAST_TUNING.md` for detailed tuning documentation.
 
 ## Deployment
 
-**Production Server:** 165.227.150.233 (DigitalOcean)
+**Production Server:** Set `SONIOX_SERVER` environment variable to your production server IP (e.g., DigitalOcean droplet)
 
 ### Quick Deploy
 
 ```bash
 # From local machine (after PR merged to main)
-ssh root@165.227.150.233 'cd /opt/soniox-converter && \
+# Note: Set SONIOX_SERVER environment variable to your production server IP
+ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
   git pull origin main && \
-  pkill -f soniox-api && pkill -f soniox-slack && \
+  (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
   sleep 1 && \
   nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
   nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &'
@@ -123,7 +124,7 @@ ssh root@165.227.150.233 'cd /opt/soniox-converter && \
 ### Verify Deployment
 
 ```bash
-curl http://165.227.150.233:8000/health
+curl http://$SONIOX_SERVER:8000/health
 # Should return: {"status":"ok","version":"0.1.0"}
 ```
 
@@ -194,5 +195,5 @@ Caption tuning regression threshold: 5% weak-word rate.
 ## Support
 
 - **Issues:** https://github.com/floke75/soniox-converter/issues
-- **Server:** 165.227.150.233:8000
-- **Health:** http://165.227.150.233:8000/health
+- **Server:** $SONIOX_SERVER:8000 (set environment variable to your production server IP)
+- **Health:** http://$SONIOX_SERVER:8000/health

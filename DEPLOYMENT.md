@@ -2,7 +2,7 @@
 
 ## Production Server
 
-- **Host:** 165.227.150.233 (DigitalOcean)
+- **Host:** $SONIOX_SERVER (DigitalOcean - set environment variable to your production server IP)
 - **User:** root
 - **Location:** `/opt/soniox-converter`
 - **Services:** soniox-api (port 8000), soniox-slack
@@ -18,9 +18,10 @@
 ### 1. One-Line Deploy (Recommended)
 
 ```bash
-ssh root@165.227.150.233 'cd /opt/soniox-converter && \
+# Note: Set SONIOX_SERVER environment variable to your production server IP
+ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
   git pull origin main && \
-  pkill -f soniox-api && pkill -f soniox-slack && \
+  (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
   sleep 1 && \
   nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
   nohup soniox-slack > /var/log/soniox-slack.log 2>&1 & \
@@ -31,8 +32,8 @@ ssh root@165.227.150.233 'cd /opt/soniox-converter && \
 ### 2. Manual Deploy (Step-by-Step)
 
 ```bash
-# Connect to server
-ssh root@165.227.150.233
+# Connect to server (set SONIOX_SERVER environment variable to your production server IP)
+ssh root@$SONIOX_SERVER
 
 # Pull latest code
 cd /opt/soniox-converter
@@ -47,8 +48,8 @@ git log --oneline -3
 ps aux | grep -E "(soniox-api|soniox-slack)" | grep -v grep
 
 # Stop old services
-pkill -f soniox-api
-pkill -f soniox-slack
+pkill -f soniox-api || true
+pkill -f soniox-slack || true
 
 # Wait for clean shutdown
 sleep 2
@@ -67,7 +68,7 @@ ps aux | grep -E "(soniox-api|soniox-slack)" | grep -v grep
 
 ```bash
 # Health check (from local machine or server)
-curl http://165.227.150.233:8000/health
+curl http://$SONIOX_SERVER:8000/health
 
 # Expected response:
 # {"status":"ok","version":"0.1.0"}
@@ -85,23 +86,24 @@ tail -50 /var/log/soniox-slack.log
 If deployment breaks production:
 
 ```bash
-ssh root@165.227.150.233
+# Set SONIOX_SERVER environment variable to your production server IP
+ssh root@$SONIOX_SERVER
 cd /opt/soniox-converter
 
 # Find previous working commit
 git log --oneline -10
 
-# Rollback
-git checkout <previous-commit-hash>
+# Rollback (keeps you on main branch, no detached HEAD)
+git reset --hard <previous-commit-hash>
 
 # Restart services
-pkill -f soniox-api && pkill -f soniox-slack
+(pkill -f soniox-api || true) && (pkill -f soniox-slack || true)
 sleep 2
 nohup soniox-api > /var/log/soniox-api.log 2>&1 &
 nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &
 
 # Verify
-curl http://165.227.150.233:8000/health
+curl http://$SONIOX_SERVER:8000/health
 ```
 
 ## Troubleshooting
@@ -141,8 +143,8 @@ lsof -p <PID> | grep soniox-converter
 **Force restart:**
 ```bash
 cd /opt/soniox-converter
-pkill -9 -f soniox-api
-pkill -9 -f soniox-slack
+pkill -9 -f soniox-api || true
+pkill -9 -f soniox-slack || true
 sleep 1
 nohup soniox-api > /var/log/soniox-api.log 2>&1 &
 nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &
@@ -163,7 +165,7 @@ pip3 list | grep -E "(fastapi|uvicorn|soniox)"
 
 **Run with verbose logging:**
 ```bash
-pkill -f soniox-api
+pkill -f soniox-api || true
 cd /opt/soniox-converter
 python3 -m uvicorn soniox_converter.server.app:app --host 0.0.0.0 --port 8000 --log-level debug
 ```
@@ -189,7 +191,7 @@ After tuning caption algorithms:
 ### New Format Added
 When adding new output formatters:
 1. Deploy normally
-2. Test with: `curl -X POST http://165.227.150.233:8000/transcriptions -F "file=@test.wav"`
+2. Test with: `curl -X POST http://$SONIOX_SERVER:8000/transcriptions -F "file=@test.wav"`
 3. Verify new format in output_files list
 
 ### Breaking API Changes
