@@ -21,6 +21,7 @@
 # Note: Set SONIOX_SERVER environment variable to your production server IP
 ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
   git pull origin main && \
+  pip3 install -e . && \
   (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
   sleep 1 && \
   nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
@@ -40,6 +41,9 @@ cd /opt/soniox-converter
 git fetch origin
 git checkout main
 git pull origin main
+
+# Install/update dependencies
+pip3 install -e .
 
 # Verify commit
 git log --oneline -3
@@ -83,21 +87,17 @@ tail -50 /var/log/soniox-slack.log
 
 ## Rollback
 
+**Prerequisite:** Production server must have git push access to GitHub (SSH key or credentials configured).
+
 If deployment breaks production:
 
 ```bash
-# Connect to server
+# Option A: Revert on server (requires git push credentials)
 ssh root@$SONIOX_SERVER
-
-# Find the problematic commit
 cd /opt/soniox-converter
 git log --oneline -10
-
-# Revert the bad commit (creates new commit that undoes changes)
 git revert <bad-commit-hash>
-
-# Push revert to remote (IMPORTANT: Persists the rollback)
-git push origin main
+git push origin main  # Requires write access to repo
 
 # Restart services to apply rollback
 (pkill -f soniox-api || true) && (pkill -f soniox-slack || true)
@@ -107,6 +107,19 @@ nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &
 
 # Verify health
 curl http://$SONIOX_SERVER:8000/health
+```
+
+```bash
+# Option B: Revert on server, push from dev machine
+# On server:
+ssh root@$SONIOX_SERVER
+cd /opt/soniox-converter
+git revert <bad-commit-hash>  # Creates revert commit locally
+exit
+
+# On local machine:
+git pull origin main
+git push origin main  # Uses your local credentials
 ```
 
 **Alternative:** If you need to hard-reset (use with caution):

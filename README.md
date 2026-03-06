@@ -115,6 +115,7 @@ See `tests/tools/README_BROADCAST_TUNING.md` for detailed tuning documentation.
 # Note: Set SONIOX_SERVER environment variable to your production server IP
 ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
   git pull origin main && \
+  pip3 install -e . && \
   (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
   sleep 1 && \
   nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
@@ -128,7 +129,7 @@ curl http://$SONIOX_SERVER:8000/health
 # Should return: {"status":"ok","version":"0.1.0"}
 ```
 
-See detailed deployment guide in project documentation.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment procedures, troubleshooting, and rollback steps.
 
 ## Architecture
 
