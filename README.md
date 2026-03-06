@@ -155,15 +155,19 @@ format_captions/     # Caption formatting library
 ### Environment Variables
 
 ```bash
-# Soniox API
+# Soniox API Configuration
 SONIOX_API_KEY=your_api_key_here
+SONIOX_BASE_URL=https://api.soniox.com/v1  # Soniox API base URL
+SONIOX_MODEL=stt-async-v4                  # Transcription model
 
-# Slack Bot
+# Language Defaults
+DEFAULT_PRIMARY_LANGUAGE=sv                 # Primary language (ISO 639-1)
+DEFAULT_SECONDARY_LANGUAGE=en               # Secondary language for fallback
+DEFAULT_DIARIZATION=true                    # Enable speaker diarization
+
+# Slack Bot (if using)
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_APP_TOKEN=xapp-...
-
-# Optional
-SONIOX_MODEL=stt-async-v4  # Default model
 ```
 
 ## Contributing

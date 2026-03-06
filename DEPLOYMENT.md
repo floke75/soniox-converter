@@ -86,24 +86,33 @@ tail -50 /var/log/soniox-slack.log
 If deployment breaks production:
 
 ```bash
-# Set SONIOX_SERVER environment variable to your production server IP
+# Connect to server
 ssh root@$SONIOX_SERVER
-cd /opt/soniox-converter
 
-# Find previous working commit
+# Find the problematic commit
+cd /opt/soniox-converter
 git log --oneline -10
 
-# Rollback (keeps you on main branch, no detached HEAD)
-git reset --hard <previous-commit-hash>
+# Revert the bad commit (creates new commit that undoes changes)
+git revert <bad-commit-hash>
 
-# Restart services
+# Push revert to remote (IMPORTANT: Persists the rollback)
+git push origin main
+
+# Restart services to apply rollback
 (pkill -f soniox-api || true) && (pkill -f soniox-slack || true)
 sleep 2
 nohup soniox-api > /var/log/soniox-api.log 2>&1 &
 nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &
 
-# Verify
+# Verify health
 curl http://$SONIOX_SERVER:8000/health
+```
+
+**Alternative:** If you need to hard-reset (use with caution):
+```bash
+git reset --hard <previous-commit-hash>
+git push --force-with-lease origin main  # REQUIRED: Updates remote
 ```
 
 ## Troubleshooting
