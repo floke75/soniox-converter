@@ -75,7 +75,10 @@ FORMAT_OPTIONS = [
     ("kinetic_words", "Kinetic Words"),
 ]
 
-# Formats checked by default (ordered for deterministic Slack payloads/fallbacks)
+# Formats checked by default (ordered for deterministic Slack payloads/fallbacks).
+# Intentionally narrower than soniox_converter.formatters.DEFAULT_FORMATTERS:
+# Slack preselects the three thread-friendly file outputs, while plain_text and
+# kinetic_words remain available but unchecked in the modal.
 DEFAULT_FORMATS = ("premiere_pro", "srt_broadcast", "srt_social")
 
 # Audio/video extensions accepted (matches config.SONIOX_SUPPORTED_FORMATS)
