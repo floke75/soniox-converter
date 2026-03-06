@@ -317,12 +317,12 @@ class KineticWordsFormatter(BaseFormatter):
 
     WHY: Social media video captions need words that pop onto screen one
     at a time in a 3-row stack. Adobe Premiere Pro reformats JSON transcript
-    text, destroying our row layout. SRT subtitle files preserve the text
-    as-is, so line breaks for vertical positioning are maintained.
+    text, destroying our row layout. Separate SRT subtitle files preserve
+    each row's text as-is.
 
     HOW: Merges punctuation, splits into sentences, buckets words into
     groups of 3, computes appear/disappear timing, then distributes
-    words across three row files with line-break positioning.
+    words across three row files by row index within each bucket.
 
     RULES:
     - Single speaker (ignores diarization)

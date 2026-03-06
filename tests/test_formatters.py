@@ -411,14 +411,13 @@ class TestKineticWordsFormatter:
         assert outputs[2].content.strip() == "", "Row 3 should be empty for single-word sentences"
 
     def test_one_word_or_number_group_per_block(self, verified_sample_transcript):
-        """Each SRT block contains one word or number group (after stripping newlines)."""
+        """Each SRT block contains one word or number group."""
         formatter = KineticWordsFormatter()
         outputs = formatter.format(verified_sample_transcript)
 
         for output in outputs:
             for block in _parse_srt_blocks(output.content):
-                # Strip leading newlines (row positioning)
-                text = block["text"].lstrip("\n")
+                text = block["text"]
                 # Should have at least one visible token
                 assert len(text.strip()) > 0, "Empty block: {}".format(repr(text))
 
