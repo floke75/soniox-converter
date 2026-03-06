@@ -1351,7 +1351,7 @@ class TestExtractModalConfig:
         assert config["primary_language"] == "sv"
         assert config["secondary_language"] is None
         assert config["diarization"] is False
-        assert config["output_formats"] == ["premiere_pro", "srt_captions"]
+        assert config["output_formats"] == ["premiere_pro", "srt_broadcast", "srt_social"]
 
     def test_extracts_all_values(self):
         values = {

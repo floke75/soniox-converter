@@ -14,7 +14,7 @@ RULES:
 - All functions return list[dict] (Block Kit blocks) or str (plain text)
 - action_id values must match the handler registrations in bot.py
 - Smart defaults: Swedish primary, English secondary, diarization on,
-  Premiere Pro + SRT broadcast checked by default
+  Premiere Pro + split SRT outputs checked by default
 - Python 3.9+ compatible (no match/case, no PEP 604 unions)
 """
 

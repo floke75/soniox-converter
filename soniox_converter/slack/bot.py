@@ -475,7 +475,7 @@ def _extract_modal_config(values: Dict[str, Any]) -> Dict[str, Any]:
     ).get("selected_options", [])
     output_formats = [opt.get("value", "") for opt in format_opts if opt.get("value")]
     if not output_formats:
-        output_formats = ["premiere_pro", "srt_captions"]
+        output_formats = ["premiere_pro", "srt_broadcast", "srt_social"]
 
     return {
         "primary_language": primary_language,
