@@ -450,8 +450,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--secondary-language",
-        default=None,
-        help="Secondary language ISO 639-1 code for code-switching detection.",
+        default=DEFAULT_SECONDARY_LANGUAGE,
+        help="Secondary language ISO 639-1 code for code-switching detection (default: %(default)s).",
     )
 
     parser.add_argument(

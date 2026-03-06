@@ -24,8 +24,8 @@ pip install -e .
 
 **CLI:**
 ```bash
-# Convert to all formats
-python -m soniox_converter input.wav --output-dir ./output/
+# Convert to all formats (create output dir if needed)
+mkdir -p ./output/ && python -m soniox_converter input.wav --output-dir ./output/
 
 # Specific formats only
 python -m soniox_converter input.wav --output-dir ./output/ --formats srt_social,srt_broadcast
