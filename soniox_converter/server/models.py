@@ -64,7 +64,7 @@ class TranscriptionConfig(BaseModel):
     - primary_language defaults to "sv" (Swedish)
     - secondary_language is optional (for code-switching)
     - diarization defaults to True
-    - output_formats defaults to all available formats
+    - output_formats defaults to soniox_converter.formatters.DEFAULT_FORMATTERS
     """
 
     primary_language: str = Field(
@@ -81,7 +81,10 @@ class TranscriptionConfig(BaseModel):
     )
     output_formats: Optional[List[OutputFormat]] = Field(
         default=None,
-        description="Output formats to generate. Defaults to all available formats.",
+        description=(
+            "Output formats to generate. Defaults to the non-deprecated "
+            "formatter set used by the app (see soniox_converter.formatters.DEFAULT_FORMATTERS)."
+        ),
     )
 
 

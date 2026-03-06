@@ -1,8 +1,9 @@
-"""Tests for the Slack bot event handlers, Block Kit forms, and formatters.
+"""Tests for the Slack bot event handlers, modal flow, and Slack formatters.
 
 WHY: Validates that the Slack bot correctly handles file_shared events,
-Block Kit form submissions, progress updates, error handling, and message
-formatting. All Slack API calls and HTTP API calls are mocked.
+the modal-first Slack workflow, legacy Block Kit compatibility helpers,
+progress updates, error handling, and message formatting. All Slack API
+calls and HTTP API calls are mocked.
 
 HOW: Uses unittest.mock to mock the Slack WebClient and httpx HTTP calls.
 Tests exercise event handlers, action handlers, form config extraction,
@@ -164,12 +165,12 @@ class TestFormatProgress:
 
 
 # ---------------------------------------------------------------------------
-# Tests: Block Kit form builder
+# Tests: legacy Block Kit form builder
 # ---------------------------------------------------------------------------
 
 
 class TestBuildTranscriptionForm:
-    """Tests for the Block Kit transcription form."""
+    """Tests for the legacy Block Kit transcription form."""
 
     def test_returns_list_of_blocks(self):
         blocks = build_transcription_form("test.mp3", "F12345")
@@ -214,6 +215,7 @@ class TestBuildTranscriptionForm:
         initial_values = {opt["value"] for opt in checkboxes["initial_options"]}
         assert "premiere_pro" in initial_values
         assert "srt_broadcast" in initial_values
+        assert "srt_social" in initial_values
 
     def test_transcribe_button_has_file_id(self):
         blocks = build_transcription_form("test.mp3", "F_ABC123")
@@ -410,7 +412,7 @@ class TestHandleFileShared:
 
 
 # ---------------------------------------------------------------------------
-# Tests: Action handlers
+# Tests: legacy action handlers
 # ---------------------------------------------------------------------------
 
 
@@ -434,7 +436,7 @@ class TestActionHandlers:
 
 
 class TestHandleTranscribeSubmit:
-    """Tests for the Transcribe button handler."""
+    """Tests for the legacy Transcribe button handler."""
 
     def test_acks_immediately(self):
         ack = MagicMock()
@@ -481,7 +483,7 @@ class TestHandleTranscribeSubmit:
 
 
 class TestExtractFormConfig:
-    """Tests for extracting form values from the Slack action body."""
+    """Tests for extracting legacy Block Kit form values from the action body."""
 
     def test_defaults_when_empty_state(self):
         body = {"state": {"values": {}}}
@@ -489,7 +491,7 @@ class TestExtractFormConfig:
         assert config["primary_language"] == "sv"
         assert config["secondary_language"] == "en"
         assert config["diarization"] is True
-        assert config["output_formats"] == ["premiere_pro", "srt_captions"]
+        assert config["output_formats"] == ["premiere_pro", "srt_broadcast", "srt_social"]
 
     def test_extracts_primary_language(self):
         body = {

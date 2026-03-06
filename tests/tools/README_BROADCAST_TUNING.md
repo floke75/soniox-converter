@@ -58,6 +58,8 @@ python tests/tools/tune_broadcast_captions.py --help
 
 ### Summary Table
 
+Historical sample output shape from the tool:
+
 ```
 Test File                       Blocks   Weak%  Balance  Single%   Short  NoPunct
 ----------------------------------------------------------------------------------------
@@ -129,16 +131,23 @@ tests/fixtures/caption_tuning/output_broadcast/
 | Line balance | Tracked | N/A (single line) |
 | Single-line blocks | Tracked (should be low) | N/A |
 
-## Current Performance
+## Interpreting Current Performance
 
-**Broadcast preset baseline:**
+Treat the numbers printed by the tool as measurements of the current test
+corpus, not product guarantees. Re-run `python tests/tools/tune_broadcast_captions.py --all`
+whenever you need the current baseline.
 
-- Weak-word rate: 12.5% (ACCEPTABLE - below 15%)
-- Line balance: 5.6 chars (GOOD - below 10)
-- Single-line rate: 16.7% (could be improved)
-- Better than social media: 12.5% vs 16.2%
+What to look for:
 
-See `tests/fixtures/caption_tuning/BROADCAST_EVALUATION_REPORT.md` for detailed analysis.
+- Weak-word rate below 15% is acceptable for the current broadcast heuristic.
+- Line balance below 10 chars is generally good.
+- Single-line rate is diagnostic, not automatically a bug.
+- Do not compare the broadcast percentage directly to the social-media suite as
+  if they were equivalent KPIs; the tools score different layouts and use
+  different thresholds.
+
+See `tests/fixtures/caption_tuning/BROADCAST_EVALUATION_REPORT.md` for a
+detailed historical analysis.
 
 ## Tuning Guidelines
 
@@ -150,7 +159,7 @@ See `tests/fixtures/caption_tuning/BROADCAST_EVALUATION_REPORT.md` for detailed 
 
 ### When NOT to tune
 
-- Current performance is acceptable (12.5% weak-word rate)
+- Current performance is within the acceptable threshold you measure from the tool
 - Short sentences naturally create stragglers
 - Over-tuning can create worse artifacts
 

@@ -16,7 +16,8 @@ RULES:
 - Validates file extension against SONIOX_SUPPORTED_FORMATS before any API call
 - Context files: --script, --terms (repeatable), --default-terms; auto-discovers
   companion files ({stem}-script.txt, {stem}-terms.txt) when not explicitly given
-- --formats: comma-separated formatter keys (default: all registered)
+- --formats: comma-separated formatter keys
+  (default: soniox_converter.formatters.DEFAULT_FORMATTERS)
 - Output naming: {stem}{suffix}, numeric suffix for conflicts (-transcript-2.json)
 - Status output goes to stderr (not stdout)
 - Always cleans up Soniox file and transcription after processing
@@ -464,7 +465,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--formats",
         default=None,
         help="Comma-separated list of output formats. "
-             "Available: {}. Default: all.".format(", ".join(sorted(FORMATTERS.keys()))),
+             "Available: {}. Default: {}.".format(
+                 ", ".join(sorted(FORMATTERS.keys())),
+                 ", ".join(DEFAULT_FORMATTERS),
+             ),
     )
 
     parser.add_argument(

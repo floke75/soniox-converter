@@ -1,9 +1,9 @@
-"""Message templates, Block Kit builders, and formatters for Slack bot.
+"""Message templates, modal builders, and Slack-facing formatters.
 
-WHY: The Slack bot needs to send structured messages: a Block Kit form
-for transcription options, progress updates during processing, and a
-summary when complete. Centralizing these builders keeps bot.py focused
-on event/action handling logic.
+WHY: The Slack bot needs to send structured messages: a compact in-thread
+button message, a transcription modal, progress updates during processing,
+and a summary when complete. Centralizing these builders keeps bot.py
+focused on event/action handling logic.
 
 HOW: Each function returns a list of Block Kit block dicts ready to be
 passed to say(blocks=...) or client.chat_update(blocks=...). Progress
@@ -86,16 +86,16 @@ SUPPORTED_EXTENSIONS = {
 
 
 # ---------------------------------------------------------------------------
-# Block Kit form builder
+# Legacy Block Kit form builder
 # ---------------------------------------------------------------------------
 
 
 def build_transcription_form(filename: str, file_id: str) -> List[Dict[str, Any]]:
     """Build the Block Kit form for transcription configuration.
 
-    WHY: When a user uploads an audio/video file, the bot replies with
-    a form letting them pick language, diarization, and output formats
-    before starting transcription.
+    WHY: The current Slack UX is modal-first, but this helper is retained
+    for compatibility with older interactive messages and for tests that
+    exercise legacy payload parsing.
 
     HOW: Constructs Block Kit blocks with static_select for languages,
     checkboxes for diarization and formats, and a button to submit.
@@ -103,7 +103,7 @@ def build_transcription_form(filename: str, file_id: str) -> List[Dict[str, Any]
 
     RULES:
     - Smart defaults: Swedish primary, English secondary, diarization on
-    - Default formats: Premiere Pro + SRT broadcast
+    - Default formats: Premiere Pro + split SRT outputs
     - action_id values must match bot.py handler registrations
     """
     # Language dropdown options

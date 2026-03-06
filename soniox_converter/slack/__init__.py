@@ -2,8 +2,9 @@
 
 WHY: Users in Slack need to submit audio/video files for transcription
 directly from their workspace. This package provides a Socket Mode bot
-that watches a channel for file uploads, presents a Block Kit form for
-configuration, and delivers transcription results back to the thread.
+that watches a channel for file uploads, posts a compact button message,
+opens a modal for configuration, and delivers transcription results back
+to the thread.
 
 HOW: The bot runs as a separate process using slack-bolt's Socket Mode
 adapter. It acts as an HTTP client to the local FastAPI transcription
