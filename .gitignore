@@ -7,3 +7,4 @@ __pycache__/
 test-assets/*.mp4
 test-assets/*.wav
 test-assets/*.rtf
+firebase-debug.log

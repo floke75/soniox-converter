@@ -35,7 +35,6 @@ from soniox_converter.api.client import SonioxClient
 from soniox_converter.config import (
     DEFAULT_DIARIZATION,
     DEFAULT_PRIMARY_LANGUAGE,
-    DEFAULT_SECONDARY_LANGUAGE,
     SONIOX_SUPPORTED_FORMATS,
 )
 from soniox_converter.core.assembler import (
@@ -451,7 +450,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--secondary-language",
         default=None,
-        help="Secondary language ISO 639-1 code for code-switching detection.",
+        help="Secondary language ISO 639-1 code for code-switching detection (default: %(default)s).",
     )
 
     parser.add_argument(
