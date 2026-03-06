@@ -87,19 +87,20 @@ tail -50 /var/log/soniox-slack.log
 
 ## Rollback
 
-**Prerequisite:** Production server must have git push access to GitHub (SSH key or credentials configured).
+**Prerequisite:** Requires git push access to GitHub (SSH key or credentials).
 
 If deployment breaks production:
 
 ```bash
-# Option A: Revert on server (requires git push credentials)
+# Option A: Revert on production server (requires git push credentials on server)
 ssh root@$SONIOX_SERVER
 cd /opt/soniox-converter
-git log --oneline -10
+git log --oneline -10  # Find bad commit hash
 git revert <bad-commit-hash>
-git push origin main  # Requires write access to repo
+git push origin main
 
-# Restart services to apply rollback
+# Redeploy with revert
+pip3 install -e .
 (pkill -f soniox-api || true) && (pkill -f soniox-slack || true)
 sleep 2
 nohup soniox-api > /var/log/soniox-api.log 2>&1 &
@@ -109,23 +110,25 @@ nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &
 curl http://$SONIOX_SERVER:8000/health
 ```
 
+**Alternative for servers without git credentials:**
+Revert from dev machine, then deploy normally:
 ```bash
-# Option B: Revert on server, push from dev machine
-# On server:
-ssh root@$SONIOX_SERVER
-cd /opt/soniox-converter
-git revert <bad-commit-hash>  # Creates revert commit locally
-exit
-
-# On local machine:
+# On dev machine
 git pull origin main
-git push origin main  # Uses your local credentials
-```
+git revert <bad-commit-hash>
+git push origin main
 
-**Alternative:** If you need to hard-reset (use with caution):
-```bash
-git reset --hard <previous-commit-hash>
-git push --force-with-lease origin main  # REQUIRED: Updates remote
+# On server (use normal deployment command)
+ssh root@$SONIOX_SERVER 'cd /opt/soniox-converter && \
+  git pull origin main && \
+  pip3 install -e . && \
+  (pkill -f soniox-api || true) && (pkill -f soniox-slack || true) && \
+  sleep 2 && \
+  nohup soniox-api > /var/log/soniox-api.log 2>&1 & \
+  nohup soniox-slack > /var/log/soniox-slack.log 2>&1 &'
+
+# Verify health
+curl http://$SONIOX_SERVER:8000/health
 ```
 
 ## Troubleshooting

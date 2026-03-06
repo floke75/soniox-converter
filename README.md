@@ -48,7 +48,7 @@ soniox-slack
 
 | Format | Description | Output File |
 |--------|-------------|-------------|
-| `premiere_pro` | Adobe Premiere Pro markers | `-transcript.json` |
+| `premiere_pro` | Premiere Pro Audio Transcript JSON | `-transcript.json` |
 | `plain_text` | Plain text transcript | `-transcript.txt` |
 | `kinetic_words` | Word-by-word with timing | `-kinetic-row1.srt`, `-kinetic-row2.srt`, `-kinetic-row3.srt` |
 | `srt_broadcast` | SRT for 16:9 video (2-line) | `-broadcast.srt` |
