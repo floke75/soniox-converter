@@ -125,9 +125,9 @@ It is useful for local validation, but it is not a full production stack.
 ### API checks
 
 ```bash
-SONIOX_API_BASE_URL="${SONIOX_API_BASE_URL:-http://localhost:8000}"
-curl "$SONIOX_API_BASE_URL/health"
-curl "$SONIOX_API_BASE_URL/formats"
+CONVERTER_API_URL="${CONVERTER_API_URL:-http://localhost:8000}"
+curl "$CONVERTER_API_URL/health"
+curl "$CONVERTER_API_URL/formats"
 python3 -c "from soniox_converter.server.app import app; print(app.title)"
 ```
 

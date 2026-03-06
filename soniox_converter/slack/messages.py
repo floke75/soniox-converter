@@ -22,6 +22,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from soniox_converter.config import SONIOX_SUPPORTED_FORMATS as SUPPORTED_EXTENSIONS
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -81,11 +83,7 @@ FORMAT_OPTIONS = [
 # kinetic_words remain available but unchecked in the modal.
 DEFAULT_FORMATS: tuple[str, ...] = ("premiere_pro", "srt_broadcast", "srt_social")
 
-# Audio/video extensions accepted (matches config.SONIOX_SUPPORTED_FORMATS)
-SUPPORTED_EXTENSIONS = {
-    ".aac", ".aiff", ".amr", ".asf", ".flac",
-    ".mp3", ".ogg", ".wav", ".webm", ".m4a", ".mp4",
-}
+# Canonical audio/video extensions accepted by Soniox.
 
 
 # ---------------------------------------------------------------------------
